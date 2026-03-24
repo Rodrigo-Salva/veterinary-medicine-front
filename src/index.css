@@ -1,5 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
 :root {
   --bg-main: #f0f2f5;
   --sidebar-bg: #2d2d2d;
@@ -358,6 +363,10 @@ td {
 
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out forwards;
+}
+
+.fade-in {
+  height: 100%;  /* ← agrega esto si no está */
 }
 
 /* Login Page Specific Styles */
