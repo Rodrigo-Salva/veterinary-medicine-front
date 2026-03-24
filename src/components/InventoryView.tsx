@@ -71,7 +71,7 @@ const InventoryView: React.FC = () => {
     <div className="dashboard-container" style={{ overflowY: 'auto' }}>
       <div className="header-row">
         <div className="greetings">
-          <h2 style={{ fontSize: '24px', fontWeight: 700 }}>Inventario 📦</h2>
+          <h2 style={{ fontSize: '24px', fontWeight: 700 }}>Inventario</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Gestiona tus medicamentos y suministros</p>
         </div>
         <div className="search-bar">

@@ -173,7 +173,7 @@ const CalendarView: React.FC = () => {
 
       <div className="cal-main">
         <div className="cal-header">
-          <div className="cal-title">📅 Calendario de Citas</div>
+          <div className="cal-title">Calendario de Citas</div>
           <div className="cal-nav">
             <button onClick={prevMonth}><ChevronLeft size={16} /></button>
             <span className="month-label">{MONTH_NAMES[month]} {year}</span>

@@ -352,7 +352,7 @@ const MedicalHistoryView: React.FC = () => {
                 {attachments.map(a => (
                   <div key={a.id} style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                     {a.file_type === 'Image' ? (
-                      <img src={`http://localhost:8001/${a.file_path}`} alt={a.description} style={{ width: '100%', height: '150px', objectFit: 'cover' }} />
+                      <img src={`http://localhost:8000/${a.file_path}`} alt={a.description} style={{ width: '100%', height: '150px', objectFit: 'cover' }} />
                     ) : (
                       <div style={{ height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9' }}>
                         <FileText size={48} color="#94a3b8" />
