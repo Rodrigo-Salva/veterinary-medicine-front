@@ -119,9 +119,9 @@ const MedicalHistoryView: React.FC = () => {
   return (
     <div className="history-container" style={{ display: 'flex', height: '100%', background: '#f8fafc' }}>
       {/* Left Sidebar: Pet List */}
-      <div className="pet-list-sidebar" style={{ 
-        width: '320px', 
-        background: 'white', 
+      <div className="pet-list-sidebar" style={{
+        width: '320px',
+        background: 'white',
         borderRight: '1px solid #e2e8f0',
         display: 'flex',
         flexDirection: 'column'
@@ -130,17 +130,17 @@ const MedicalHistoryView: React.FC = () => {
           <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px' }}>Pacientes</h3>
           <div className="search-box" style={{ position: 'relative' }}>
             <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-            <input 
-              type="text" 
-              placeholder="Buscar paciente..." 
+            <input
+              type="text"
+              placeholder="Buscar paciente..."
               style={{ width: '100%', padding: '10px 10px 10px 36px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px' }}
             />
           </div>
         </div>
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {pets.map(pet => (
-            <div 
-              key={pet.id} 
+            <div
+              key={pet.id}
               onClick={() => selectPet(pet)}
               style={{
                 padding: '16px 24px',
@@ -180,21 +180,21 @@ const MedicalHistoryView: React.FC = () => {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '12px' }}>
-                <button 
+                <button
                   onClick={() => setIsPrescriptionModalOpen(true)}
-                  className="btn-premium" 
+                  className="btn-premium"
                   style={{ background: '#f1f5f9', color: '#475569', boxShadow: 'none' }}
                 >
                   <FilePlus size={18} /> Nueva Receta
                 </button>
-                <button 
+                <button
                   onClick={() => setIsAttachmentModalOpen(true)}
-                  className="btn-premium" 
+                  className="btn-premium"
                   style={{ background: '#f1f5f9', color: '#475569', boxShadow: 'none' }}
                 >
                   <ImageIcon size={18} /> Subir Archivo
                 </button>
-                <button 
+                <button
                   onClick={() => setIsModalOpen(true)}
                   className="btn-premium"
                 >
@@ -205,10 +205,10 @@ const MedicalHistoryView: React.FC = () => {
 
             {/* Tabs */}
             <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', marginBottom: '24px' }}>
-              <button 
+              <button
                 onClick={() => setActiveTab('history')}
-                style={{ 
-                  padding: '12px 24px', 
+                style={{
+                  padding: '12px 24px',
                   borderBottom: activeTab === 'history' ? '2px solid #3b82f6' : 'none',
                   color: activeTab === 'history' ? '#3b82f6' : '#64748b',
                   fontWeight: '600',
@@ -218,10 +218,10 @@ const MedicalHistoryView: React.FC = () => {
               >
                 Historial Médico
               </button>
-              <button 
+              <button
                 onClick={() => setActiveTab('prescriptions')}
-                style={{ 
-                  padding: '12px 24px', 
+                style={{
+                  padding: '12px 24px',
                   borderBottom: activeTab === 'prescriptions' ? '2px solid #3b82f6' : 'none',
                   color: activeTab === 'prescriptions' ? '#3b82f6' : '#64748b',
                   fontWeight: '600',
@@ -231,10 +231,10 @@ const MedicalHistoryView: React.FC = () => {
               >
                 Recetas
               </button>
-              <button 
+              <button
                 onClick={() => setActiveTab('attachments')}
-                style={{ 
-                  padding: '12px 24px', 
+                style={{
+                  padding: '12px 24px',
                   borderBottom: activeTab === 'attachments' ? '2px solid #3b82f6' : 'none',
                   color: activeTab === 'attachments' ? '#3b82f6' : '#64748b',
                   fontWeight: '600',
@@ -249,17 +249,17 @@ const MedicalHistoryView: React.FC = () => {
             {activeTab === 'history' && (
               <div className="timeline animate-fade-in" style={{ position: 'relative' }}>
                 <div style={{ position: 'absolute', left: '20px', top: '0', bottom: '0', width: '2px', background: 'linear-gradient(to bottom, #3b82f6, transparent)' }}></div>
-                
+
                 {history.length > 0 ? history.map((record, index) => (
                   <div key={record.id} style={{ position: 'relative', paddingLeft: '60px', marginBottom: '48px' }}>
-                    <div style={{ 
-                      position: 'absolute', 
-                      left: '0', 
-                      top: '0', 
-                      width: '42px', 
-                      height: '42px', 
-                      background: 'white', 
-                      border: '6px solid #f8fafc', 
+                    <div style={{
+                      position: 'absolute',
+                      left: '0',
+                      top: '0',
+                      width: '42px',
+                      height: '42px',
+                      background: 'white',
+                      border: '6px solid #f8fafc',
                       borderRadius: '50%',
                       boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                       display: 'flex',
@@ -269,16 +269,16 @@ const MedicalHistoryView: React.FC = () => {
                     }}>
                       <div style={{ width: '12px', height: '12px', background: '#3b82f6', borderRadius: '50%' }}></div>
                     </div>
-                    
+
                     <div className="floating-card" style={{ background: 'white', borderRadius: '24px', padding: '32px', boxShadow: 'var(--shadow)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', alignItems: 'flex-start' }}>
                         <div>
                           <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                            <span style={{ 
-                              fontSize: '11px', 
-                              textTransform: 'uppercase', 
-                              fontWeight: '700', 
-                              padding: '4px 10px', 
+                            <span style={{
+                              fontSize: '11px',
+                              textTransform: 'uppercase',
+                              fontWeight: '700',
+                              padding: '4px 10px',
                               borderRadius: '20px',
                               background: record.record_type === 'Vaccine' ? '#dcfce7' : '#f1f5f9',
                               color: record.record_type === 'Vaccine' ? '#166534' : '#64748b',
@@ -298,11 +298,11 @@ const MedicalHistoryView: React.FC = () => {
                           )}
                         </div>
                       </div>
-                      
+
                       <div style={{ marginBottom: '24px', padding: '16px', background: '#f8fafc', borderRadius: '16px' }}>
                         <p style={{ color: '#475569', lineHeight: '1.6' }}>{record.description}</p>
                       </div>
-                      
+
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                         <div>
                           <label style={{ fontWeight: '700', display: 'block', fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8', marginBottom: '12px', letterSpacing: '0.05em' }}>Diagnóstico</label>
@@ -352,7 +352,7 @@ const MedicalHistoryView: React.FC = () => {
                 {attachments.map(a => (
                   <div key={a.id} style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                     {a.file_type === 'Image' ? (
-                      <img src={`http://localhost:8000/${a.file_path}`} alt={a.description} style={{ width: '100%', height: '150px', objectFit: 'cover' }} />
+                      <img src={`http://localhost:8001/${a.file_path}`} alt={a.description} style={{ width: '100%', height: '150px', objectFit: 'cover' }} />
                     ) : (
                       <div style={{ height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9' }}>
                         <FileText size={48} color="#94a3b8" />
@@ -383,10 +383,10 @@ const MedicalHistoryView: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div className="form-group">
               <label style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px', display: 'block' }}>Tipo</label>
-              <select 
+              <select
                 className="input-premium"
                 value={formData.record_type}
-                onChange={e => setFormData({...formData, record_type: e.target.value})}
+                onChange={e => setFormData({ ...formData, record_type: e.target.value })}
                 required
               >
                 <option value="Consultation">Consulta General</option>
@@ -397,20 +397,20 @@ const MedicalHistoryView: React.FC = () => {
             </div>
             <div className="form-group">
               <label style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px', display: 'block' }}>Próxima Cita</label>
-              <input 
+              <input
                 className="input-premium"
                 type="date"
                 value={formData.next_date}
-                onChange={e => setFormData({...formData, next_date: e.target.value})}
+                onChange={e => setFormData({ ...formData, next_date: e.target.value })}
               />
             </div>
           </div>
           <div className="form-group">
             <label style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px', display: 'block' }}>Descripción Preliminar</label>
-            <textarea 
+            <textarea
               className="input-premium"
               value={formData.description}
-              onChange={e => setFormData({...formData, description: e.target.value})}
+              onChange={e => setFormData({ ...formData, description: e.target.value })}
               placeholder="Describa el motivo y estado inicial"
               required
               rows={3}
@@ -418,21 +418,21 @@ const MedicalHistoryView: React.FC = () => {
           </div>
           <div className="form-group">
             <label style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px', display: 'block' }}>Diagnóstico Final</label>
-            <input 
+            <input
               className="input-premium"
               type="text"
               value={formData.diagnosis}
-              onChange={e => setFormData({...formData, diagnosis: e.target.value})}
+              onChange={e => setFormData({ ...formData, diagnosis: e.target.value })}
               placeholder="Diagnóstico médico"
               required
             />
           </div>
           <div className="form-group">
             <label style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px', display: 'block' }}>Tratamiento a Seguir</label>
-            <textarea 
+            <textarea
               className="input-premium"
               value={formData.treatment}
-              onChange={e => setFormData({...formData, treatment: e.target.value})}
+              onChange={e => setFormData({ ...formData, treatment: e.target.value })}
               placeholder="Medicación o cuidados especiales"
               required
               rows={3}
@@ -449,10 +449,10 @@ const MedicalHistoryView: React.FC = () => {
         <form onSubmit={handleAddPrescription} className="management-form-premium">
           <div className="form-group">
             <label style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px', display: 'block' }}>Medicamentos</label>
-            <textarea 
+            <textarea
               className="input-premium"
               value={prescriptionData.medications}
-              onChange={e => setPrescriptionData({...prescriptionData, medications: e.target.value})}
+              onChange={e => setPrescriptionData({ ...prescriptionData, medications: e.target.value })}
               placeholder="Medicamentos y dosis"
               required
               rows={4}
@@ -460,10 +460,10 @@ const MedicalHistoryView: React.FC = () => {
           </div>
           <div className="form-group">
             <label style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px', display: 'block' }}>Indicaciones</label>
-            <textarea 
+            <textarea
               className="input-premium"
               value={prescriptionData.instructions}
-              onChange={e => setPrescriptionData({...prescriptionData, instructions: e.target.value})}
+              onChange={e => setPrescriptionData({ ...prescriptionData, instructions: e.target.value })}
               placeholder="Instrucciones de administración"
               required
               rows={3}
@@ -480,7 +480,7 @@ const MedicalHistoryView: React.FC = () => {
         <form onSubmit={handleFileUpload} className="management-form-premium">
           <div className="form-group">
             <label style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px', display: 'block' }}>Descripción del archivo</label>
-            <input 
+            <input
               className="input-premium"
               type="text"
               value={fileDescription}
@@ -491,7 +491,7 @@ const MedicalHistoryView: React.FC = () => {
           </div>
           <div className="form-group">
             <label style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px', display: 'block' }}>Seleccionar archivo</label>
-            <input 
+            <input
               className="input-premium"
               type="file"
               onChange={e => setSelectedFile(e.target.files ? e.target.files[0] : null)}
