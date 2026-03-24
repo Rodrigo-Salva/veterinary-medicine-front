@@ -48,7 +48,7 @@ const ReportsView: React.FC = () => {
         .recharts-tooltip-wrapper .recharts-default-tooltip { background: #1e293b !important; border-color: rgba(255,255,255,0.1) !important; border-radius: 8px !important; }
       `}</style>
 
-      <div className="rep-title">📊 Reportes & Estadísticas</div>
+      <div className="rep-title">Reportes & Estadísticas</div>
 
       <div className="rep-kpi-grid">
         <div className="rep-kpi">
