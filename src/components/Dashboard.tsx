@@ -1,156 +1,217 @@
 import React, { useEffect, useState } from 'react'
-import { 
-  Search, 
-  ChevronDown,
-  User as UserIcon,
-  ArrowRightLeft,
-  Zap,
-  Bell,
-  Bus,
-  Loader2,
-  Plus
+import { useAuth } from '../context/AuthContext'
+import {
+  Dog, Calendar, DollarSign, Users,
+  Activity, Bell, Loader2, UserCircle,
 } from 'lucide-react'
 import { statsService } from '../services/api'
-import PetList from './PetList'
-import Modal from './Modal'
-import OwnerForm from './OwnerForm'
-import PetForm from './PetForm'
-import AppointmentForm from './AppointmentForm'
 import VaccineReminders from './VaccineReminders'
+import PetList from './PetList'
 
+// ── Utilidades de fecha/hora en español ──────────────────────────────────────
+const getSaludo = () => {
+  const h = new Date().getHours()
+  if (h < 12) return 'Buenos días'
+  if (h < 18) return 'Buenas tardes'
+  return 'Buenas noches'
+}
+
+const getFechaES = () =>
+  new Date().toLocaleDateString('es', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  })
+
+// ── Componente KPI ────────────────────────────────────────────────────────────
+interface KpiProps {
+  label: string
+  value: string | number
+  sub: string
+  dark?: boolean
+  prefix?: string
+  icon: React.ReactNode
+  accent?: string
+}
+
+const KpiCard: React.FC<KpiProps> = ({ label, value, sub, dark, prefix, icon, accent }) => {
+  const bg = dark ? '#0d2b2b' : '#ffffff'
+  const textMain = dark ? '#ffffff' : 'var(--text-primary)'
+  const textSub = dark ? 'rgba(255,255,255,0.5)' : 'var(--text-secondary)'
+  const iconBg = dark ? 'rgba(34,197,94,0.18)' : '#f0fdf4'
+  const iconColor = dark ? '#22c55e' : 'var(--primary)'
+  const accentUsed = accent ?? (dark ? '#22c55e' : 'var(--primary)')
+
+  return (
+    <div
+      className="stat-card-main"
+      style={{ background: bg, color: textMain }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+        <span style={{ fontSize: '13px', fontWeight: 600, color: textSub, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          {label}
+        </span>
+        <div style={{
+          width: '36px', height: '36px', borderRadius: '10px',
+          background: iconBg, display: 'flex', alignItems: 'center',
+          justifyContent: 'center', color: iconColor, flexShrink: 0,
+        }}>
+          {icon}
+        </div>
+      </div>
+      <div style={{ fontSize: '34px', fontWeight: 800, lineHeight: 1, color: dark ? '#ffffff' : accentUsed }}>
+        {prefix && <span style={{ fontSize: '22px', fontWeight: 700 }}>{prefix}</span>}
+        {value}
+      </div>
+      <div style={{ fontSize: '12px', color: textSub, marginTop: '8px' }}>{sub}</div>
+    </div>
+  )
+}
+
+// ── Dashboard principal ───────────────────────────────────────────────────────
 const Dashboard: React.FC = () => {
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeForm, setActiveForm] = useState<'owner' | 'pet' | 'appointment' | null>(null);
-
-  const fetchStats = async () => {
-    try {
-      const data = await statsService.getStats();
-      setStats(data);
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { user } = useAuth()
+  const [stats, setStats]     = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchStats();
-  }, []);
+    statsService.getStats()
+      .then(setStats)
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
 
-  const openForm = (form: 'owner' | 'pet' | 'appointment') => {
-    setActiveForm(form);
-    setIsModalOpen(true);
-  };
-
-  const handleSuccess = () => {
-    setIsModalOpen(false);
-    setActiveForm(null);
-    fetchStats(); // Refresh stats after creation
-  };
-
-  if (loading) {
-// ...
-    return (
-      <div className="dashboard-container" style={{ justifyContent: 'center', alignItems: 'center' }}>
-        <Loader2 className="animate-spin" size={48} color="var(--primary)" />
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="dashboard-container" style={{ justifyContent: 'center', alignItems: 'center' }}>
+      <Loader2 className="animate-spin" size={48} color="var(--primary)" />
+    </div>
+  )
 
   return (
     <div className="dashboard-container">
-      <div className="header-row">
+
+      {/* ── Saludo ── */}
+      <div className="header-row" style={{ marginBottom: 0 }}>
         <div className="greetings">
-          <h2 style={{ fontSize: '24px', fontWeight: 700 }}>Greetings! 👋</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Start your day with VETSYSTEM</p>
+          <h2 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)' }}>
+            {getSaludo()}, {user?.username}
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px', textTransform: 'capitalize' }}>
+            {getFechaES()}
+          </p>
         </div>
-        <div className="search-bar">
-          <Search size={18} color="#7c7c7c" />
-          <input type="text" placeholder="Search" />
+        <div className="user-profile-badge">
+          <div style={{
+            width: '28px', height: '28px', borderRadius: '8px',
+            background: '#22c55e', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', color: '#0d2b2b',
+          }}>
+            <UserCircle size={18} color="#0d2b2b" />
+          </div>
+          <span style={{ fontSize: '13px', fontWeight: 600 }}>{user?.username}</span>
         </div>
-        <div style={{ display: 'flex', gap: '15px' }}>
-          <div className="user-profile-badge">
-            <UserIcon size={18} />
-            <span>My account</span>
-            <ChevronDown size={14} />
+      </div>
+
+      {/* ── KPI Cards (4 columnas: oscura, clara, clara, oscura) ── */}
+      <div className="stats-cards-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+        <KpiCard
+          dark
+          icon={<Dog size={18} />}
+          label="Total Pacientes"
+          value={stats?.total_pets ?? 0}
+          sub="Activos en el sistema"
+        />
+        <KpiCard
+          icon={<Calendar size={18} />}
+          label="Citas"
+          value={stats?.total_appointments ?? 0}
+          sub="Historial de citas"
+          accent="var(--primary)"
+        />
+        <KpiCard
+          icon={<Users size={18} />}
+          label="Propietarios"
+          value={stats?.total_owners ?? 0}
+          sub="Clientes registrados"
+          accent="var(--primary)"
+        />
+        <KpiCard
+          dark
+          icon={<DollarSign size={18} />}
+          label="Ingresos Totales"
+          value={(stats?.total_revenue ?? 0).toLocaleString('es')}
+          prefix="$"
+          sub="Facturación acumulada"
+        />
+      </div>
+
+      {/* ── Dos columnas: Próximas Vacunas + Actividad Reciente ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+
+        {/* Próximas vacunas */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+            <Bell size={16} color="var(--primary)" />
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>
+              Próximas Vacunas
+            </h3>
+          </div>
+          <VaccineReminders />
+        </div>
+
+        {/* Actividad reciente */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+            <Activity size={16} color="var(--primary)" />
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>
+              Actividad Reciente
+            </h3>
+          </div>
+          <div style={{ background: '#ffffff', borderRadius: '16px', boxShadow: 'var(--shadow)', overflow: 'hidden', border: '1.5px solid rgba(34,197,94,0.15)' }}>
+            {stats?.recent_activity?.length > 0 ? (
+              stats.recent_activity.map((a: any, i: number) => (
+                <div key={a.id ?? i} style={{
+                  display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px',
+                  borderBottom: i < stats.recent_activity.length - 1 ? '1px solid #f0f6f0' : 'none',
+                }}>
+                  <div style={{
+                    width: '36px', height: '36px', borderRadius: '10px',
+                    background: '#f0fdf4', display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', flexShrink: 0,
+                  }}>
+                    <Calendar size={16} color="var(--primary)" />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {a.reason}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      {new Date(a.date).toLocaleDateString('es')}
+                    </div>
+                  </div>
+                  <span style={{ fontWeight: 700, fontSize: '13px', color: 'var(--error)' }}>
+                    -${a.cost}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px' }}>
+                Sin actividad reciente
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="stats-cards-grid">
-        <div className="stat-card-main">
-          <p style={{ fontSize: '14px', color: '#a0a0a0' }}>Total Patients</p>
-          <h4 style={{ fontSize: '28px', margin: '10px 0' }}>{stats?.total_pets || 0}</h4>
-          <div className="card-footer">
-            <p style={{ fontSize: '12px', color: '#a0a0a0' }}>Active in system</p>
-            <div style={{ fontSize: '12px', opacity: 0.8 }}>Live View</div>
-          </div>
+      {/* ── Pacientes recientes ── */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+          <Dog size={16} color="var(--primary)" />
+          <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>
+            Pacientes Registrados
+          </h3>
         </div>
-        <div className="stat-card-main light">
-          <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Appointments</p>
-          <h4 style={{ fontSize: '28px', margin: '10px 0', color: 'var(--text-primary)' }}>{stats?.total_appointments || 0}</h4>
-          <div className="card-footer">
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Upcoming items</p>
-            <div style={{ width: '24px', height: '16px', background: '#f0f0f0', borderRadius: '4px' }}></div>
-          </div>
-        </div>
+        <PetList />
       </div>
 
-      <div style={{ display: 'flex', gap: '16px' }}>
-        <button 
-          className="btn-premium" 
-          onClick={() => openForm('pet')}
-        >
-          <Plus size={18} />
-          Registrar Mascota
-        </button>
-        <button 
-          className="btn-premium" 
-          onClick={() => openForm('owner')}
-          style={{ background: 'white', color: '#475569', boxShadow: 'var(--shadow)' }}
-        >
-          <UserIcon size={18} />
-          Añadir Dueño
-        </button>
-        <button 
-          className="btn-premium" 
-          onClick={() => openForm('appointment')}
-          style={{ background: 'white', color: '#475569', boxShadow: 'var(--shadow)' }}
-        >
-          <Zap size={18} />
-          Agendar Visita
-        </button>
-      </div>
-
-      <div className="section-header" style={{ marginTop: '30px' }}>
-        <h3 style={{ fontSize: '18px', fontWeight: 700 }}>Upcoming Reminders</h3>
-      </div>
-      <div style={{ marginBottom: '30px' }}>
-        <VaccineReminders />
-      </div>
-
-      <div className="section-header">
-        <h3 style={{ fontSize: '18px', fontWeight: 700 }}>Recent Patients</h3>
-        <p style={{ color: 'var(--primary)', fontSize: '13px', cursor: 'pointer' }}>See all</p>
-      </div>
-
-      <PetList />
-
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        title={
-          activeForm === 'owner' ? 'Add New Owner' : 
-          activeForm === 'pet' ? 'Register New Pet' : 
-          'Schedule Appointment'
-        }
-      >
-        {activeForm === 'owner' && <OwnerForm onSuccess={handleSuccess} onCancel={() => setIsModalOpen(false)} />}
-        {activeForm === 'pet' && <PetForm onSuccess={handleSuccess} onCancel={() => setIsModalOpen(false)} />}
-        {activeForm === 'appointment' && <AppointmentForm onSuccess={handleSuccess} onCancel={() => setIsModalOpen(false)} />}
-      </Modal>
     </div>
   )
 }
