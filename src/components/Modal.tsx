@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -9,34 +9,26 @@ interface ModalProps {
 }
 
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+  // Close on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" style={{ 
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-      background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
-    }} onClick={onClose}>
-      <div className="glass-card animate-fade-in" style={{ 
-        width: '90%', maxWidth: '500px', borderRadius: '24px', 
-        padding: '32px', position: 'relative' 
-      }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b' }}>{title}</h3>
-          <button 
-            onClick={onClose}
-            style={{ 
-              background: '#f1f5f9', border: 'none', borderRadius: '50%', 
-              width: '32px', height: '32px', display: 'flex', 
-              alignItems: 'center', justifyContent: 'center', cursor: 'pointer' 
-            }}
-          >
-            <X size={18} color="#64748b" />
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>{title}</h3>
+          <button className="modal-close-btn" onClick={onClose} aria-label="Cerrar">
+            <X size={16} />
           </button>
         </div>
-        <div className="modal-body">
-          {children}
-        </div>
+        {children}
       </div>
     </div>
   );
