@@ -43,6 +43,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('user');
   };
 
+  // Forzar logout cuando el interceptor de axios detecta un 401 (token expirado)
+  useEffect(() => {
+    const handleForcedLogout = () => {
+      setToken(null);
+      setUser(null);
+    };
+    window.addEventListener('auth:logout', handleForcedLogout);
+    return () => window.removeEventListener('auth:logout', handleForcedLogout);
+  }, []);
+
   return (
     <AuthContext.Provider value={{ user, token, login: loginAction, logout: logoutAction, isAuthenticated: !!token }}>
       {children}

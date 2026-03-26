@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { medicalService, petService, prescriptionService, attachmentService } from '../services/api';
 import { Search, Plus, Calendar, User, FileText, ChevronRight, FilePlus, Image as ImageIcon, Trash2, Printer } from 'lucide-react';
 import Modal from './Modal';
+import ConfirmDialog from './ConfirmDialog';
 import { MedicalRecord, Prescription, Attachment } from '../types';
 
 const MedicalHistoryView: React.FC = () => {
@@ -28,6 +29,7 @@ const MedicalHistoryView: React.FC = () => {
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileDescription, setFileDescription] = useState('');
+  const [confirmDeleteAttachment, setConfirmDeleteAttachment] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPets();
@@ -107,11 +109,13 @@ const MedicalHistoryView: React.FC = () => {
     }
   };
 
-  const deleteAttachment = async (id: string) => {
-    if (confirm("¿Eliminar este archivo?")) {
-      await attachmentService.delete(id);
-      selectPet(selectedPet);
-    }
+  const deleteAttachment = (id: string) => setConfirmDeleteAttachment(id);
+
+  const doDeleteAttachment = async () => {
+    if (!confirmDeleteAttachment) return;
+    await attachmentService.delete(confirmDeleteAttachment);
+    setConfirmDeleteAttachment(null);
+    selectPet(selectedPet);
   };
 
   if (loading) return <div className="p-8">Cargando Pacientes...</div>;
@@ -505,6 +509,17 @@ const MedicalHistoryView: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      {confirmDeleteAttachment && (
+        <ConfirmDialog
+          title="Eliminar archivo"
+          message="¿Estás seguro de que deseas eliminar este archivo? Esta acción no se puede deshacer."
+          confirmLabel="Eliminar"
+          variant="danger"
+          onConfirm={doDeleteAttachment}
+          onCancel={() => setConfirmDeleteAttachment(null)}
+        />
+      )}
     </div>
   );
 };

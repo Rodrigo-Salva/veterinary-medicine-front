@@ -1,322 +1,286 @@
-import React, { useEffect, useState } from "react";
-import { petService } from "../services/api";
-import { Pet } from "../types";
-import {
-  Loader2,
-  Dog,
-  Cat,
-  Bird,
-  Heart,
-  AlertCircle,
-  Clock,
-} from "lucide-react";
+import React, { useEffect, useState } from 'react'
+import { petService, ownerService } from '../services/api'
+import { Pet, PetUpdate, Owner } from '../types'
+import Modal from './Modal'
+import { Loader2, Dog, Cat, Bird, Heart, AlertCircle, Edit2, PowerOff, Users } from 'lucide-react'
+import ConfirmDialog from './ConfirmDialog'
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const AVATAR_COLORS = [
-  "#6366f1",
-  "#8b5cf6",
-  "#ec4899",
-  "#f59e0b",
-  "#10b981",
-  "#3b82f6",
-  "#ef4444",
-  "#14b8a6",
-];
+  '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b',
+  '#10b981', '#3b82f6', '#ef4444', '#14b8a6',
+]
+const avatarColor = (name: string) => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length]
 
-const getAvatarColor = (name: string) =>
-  AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
+const SpeciesIcon: React.FC<{ species: string }> = ({ species }) => {
+  const s = species.toLowerCase()
+  if (s.includes('dog') || s.includes('perro')) return <Dog size={14} />
+  if (s.includes('cat') || s.includes('gato')) return <Cat size={14} />
+  if (s.includes('bird') || s.includes('ave')) return <Bird size={14} />
+  return <Heart size={14} />
+}
 
-const getSpeciesIcon = (species: string) => {
-  const s = species.toLowerCase();
-  if (s.includes("dog") || s.includes("perro")) return <Dog size={14} />;
-  if (s.includes("cat") || s.includes("gato")) return <Cat size={14} />;
-  if (s.includes("bird") || s.includes("ave")) return <Bird size={14} />;
-  return <Heart size={14} />;
-};
+// ─── Edit Form ────────────────────────────────────────────────────────────────
 
-const STATUS_CONFIG: Record<
-  string,
-  { label: string; color: string; bg: string; icon: React.ReactNode }
-> = {
-  healthy: {
-    label: "Healthy",
-    color: "#059669",
-    bg: "#d1fae5",
-    icon: <Heart size={12} />,
-  },
-  treatment: {
-    label: "Treatment",
-    color: "#d97706",
-    bg: "#fef3c7",
-    icon: <AlertCircle size={12} />,
-  },
-  checkup: {
-    label: "Checkup",
-    color: "#2563eb",
-    bg: "#dbeafe",
-    icon: <Clock size={12} />,
-  },
-};
+interface EditFormProps {
+  pet: Pet
+  onSuccess: (updated: Pet) => void
+  onCancel: () => void
+}
 
-const StatusBadge: React.FC<{ status?: string }> = ({ status = "healthy" }) => {
-  const config = STATUS_CONFIG[status.toLowerCase()] ?? STATUS_CONFIG.healthy;
+const EditPetForm: React.FC<EditFormProps> = ({ pet, onSuccess, onCancel }) => {
+  const [form, setForm] = useState<PetUpdate>({
+    name: pet.name,
+    species: pet.species,
+    breed: pet.breed,
+    age: pet.age,
+  })
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      const updated = await petService.update(pet.id, form)
+      onSuccess(updated)
+    } catch (err) {
+      console.error('Error updating pet:', err)
+      alert('Error al actualizar la mascota.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const field = (label: string, key: keyof PetUpdate, type = 'text', extra?: object) => (
+    <div className="form-group">
+      <label style={{ fontSize: '13px', fontWeight: 600, color: '#64748b', marginBottom: '8px', display: 'block' }}>
+        {label}
+      </label>
+      <input
+        className="input-premium"
+        type={type}
+        value={form[key] as string | number ?? ''}
+        onChange={e => setForm({ ...form, [key]: type === 'number' ? parseInt(e.target.value) : e.target.value })}
+        required
+        {...extra}
+      />
+    </div>
+  )
+
   return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "4px",
-        padding: "3px 10px",
-        borderRadius: "999px",
-        fontSize: "12px",
-        fontWeight: 600,
-        color: config.color,
-        background: config.bg,
-      }}
-    >
-      {config.icon}
-      {config.label}
-    </span>
-  );
-};
+    <form onSubmit={handleSubmit} className="management-form-premium">
+      {field('Nombre', 'name')}
+      <div className="form-row">
+        {field('Especie', 'species')}
+        {field('Raza', 'breed')}
+      </div>
+      {field('Edad (años)', 'age', 'number', { min: 0 })}
+      <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+        <button type="button" onClick={onCancel} className="btn" style={{ flex: 1, background: '#f1f5f9', color: '#475569' }}>
+          Cancelar
+        </button>
+        <button type="submit" className="btn" disabled={loading} style={{ flex: 2, background: 'var(--primary)', color: 'white' }}>
+          {loading ? 'Guardando...' : 'Guardar Cambios'}
+        </button>
+      </div>
+    </form>
+  )
+}
 
-const PetList: React.FC = () => {
-  const [pets, setPets] = useState<Pet[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [hoveredRow, setHoveredRow] = useState<number | string | null>(null);
+// ─── Main Component ───────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    petService
-      .getAll()
-      .then(setPets)
-      .catch((e) => console.error("Error fetching pets:", e))
-      .finally(() => setLoading(false));
-  }, []);
+interface PetListProps {
+  searchQuery?: string
+}
+
+const PetList: React.FC<PetListProps> = ({ searchQuery = '' }) => {
+  const [pets, setPets] = useState<Pet[]>([])
+  const [owners, setOwners] = useState<Owner[]>([])
+  const [loading, setLoading] = useState(true)
+  const [editPet, setEditPet] = useState<Pet | null>(null)
+  const [confirmPet, setConfirmPet] = useState<Pet | null>(null)
+
+  const load = async () => {
+    try {
+      const [p, o] = await Promise.all([petService.getAll(), ownerService.getAll()])
+      setPets(p)
+      setOwners(o)
+    } catch (e) {
+      console.error('Error loading pets:', e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
+
+  const ownerName = (ownerId: string) => {
+    const o = owners.find(o => o.id === ownerId)
+    return o ? `${o.first_name} ${o.last_name}` : '—'
+  }
+
+  const handleDeactivate = async (pet: Pet) => {
+    try {
+      const updated = await petService.deactivate(pet.id)
+      setPets(prev => prev.map(p => p.id === updated.id ? updated : p))
+    } catch (e) {
+      console.error('Error deactivating pet:', e)
+    }
+  }
+
+  const handleEditSuccess = (updated: Pet) => {
+    setPets(prev => prev.map(p => p.id === updated.id ? updated : p))
+    setEditPet(null)
+  }
+
+  const filtered = pets.filter(p => {
+    const q = searchQuery.toLowerCase()
+    return (
+      p.name.toLowerCase().includes(q) ||
+      p.species.toLowerCase().includes(q) ||
+      p.breed.toLowerCase().includes(q) ||
+      ownerName(p.owner_id).toLowerCase().includes(q)
+    )
+  })
+
+  const active = pets.filter(p => p.is_active).length
+  const inactive = pets.length - active
 
   if (loading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: "12px",
-          padding: "4rem",
-          color: "#6366f1",
-        }}
-      >
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '4rem', color: '#6366f1' }}>
         <Loader2 size={36} className="animate-spin" />
-        <span style={{ fontSize: "14px", color: "#9ca3af" }}>
-          Loading patients...
-        </span>
+        <span style={{ fontSize: '14px', color: '#9ca3af' }}>Cargando pacientes...</span>
       </div>
-    );
+    )
   }
 
   return (
-    <div
-      style={{
-        background: "#fff",
-        borderRadius: "16px",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.04)",
-        overflow: "hidden",
-        width: "200%", // ← ocupa todo el ancho
-        height: "100%", // ← ocupa toda la altura del padre
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          padding: "20px 24px",
-          borderBottom: "1px solid #f1f5f9",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <div>
-          <h3
-            style={{
-              margin: 0,
-              fontSize: "16px",
-              fontWeight: 700,
-              color: "#0f172a",
-            }}
-          >
-            Registered Patients
-          </h3>
-          <p style={{ margin: "2px 0 0", fontSize: "13px", color: "#94a3b8" }}>
-            {pets.length} pets in the system
-          </p>
+    <>
+      {/* Stats row */}
+      <div className="stats-cards-grid" style={{ marginBottom: '20px' }}>
+        <div className="stat-card-main">
+          <p style={{ fontSize: '13px', color: '#a0a0a0' }}>Total Mascotas</p>
+          <h4 style={{ fontSize: '28px', margin: '8px 0' }}>{pets.length}</h4>
+          <div className="card-footer">
+            <Users size={14} color="#6366f1" />
+            <p style={{ fontSize: '12px', color: '#a0a0a0', marginLeft: '5px' }}>Registradas</p>
+          </div>
         </div>
-        <span
-          style={{
-            background: "#eef2ff",
-            color: "#6366f1",
-            padding: "4px 12px",
-            borderRadius: "999px",
-            fontSize: "13px",
-            fontWeight: 600,
-          }}
-        >
-          All pets
-        </span>
+        <div className="stat-card-main light">
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Activas</p>
+          <h4 style={{ fontSize: '28px', margin: '8px 0', color: '#10b981' }}>{active}</h4>
+          <div className="card-footer">
+            <Heart size={14} color="#10b981" />
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginLeft: '5px' }}>En seguimiento</p>
+          </div>
+        </div>
+        <div className="stat-card-main light">
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Inactivas</p>
+          <h4 style={{ fontSize: '28px', margin: '8px 0', color: inactive > 0 ? 'var(--error)' : 'inherit' }}>{inactive}</h4>
+          <div className="card-footer">
+            <AlertCircle size={14} color={inactive > 0 ? 'var(--error)' : '#a0a0a0'} />
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginLeft: '5px' }}>Desactivadas</p>
+          </div>
+        </div>
       </div>
 
-      {/* Table */}
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      {/* Table card */}
+      <div className="section-card" style={{ background: 'white', borderRadius: '16px', padding: '20px', boxShadow: 'var(--shadow)' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ background: "#f8fafc" }}>
-              {["Pet", "Type", "Breed", "Status", "Age"].map((h) => (
-                <th
-                  key={h}
-                  style={{
-                    padding: "10px 20px",
-                    textAlign: "left",
-                    fontSize: "11px",
-                    fontWeight: 700,
-                    color: "#94a3b8",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                  }}
-                >
-                  {h}
-                </th>
+            <tr style={{ borderBottom: '1px solid #f0f0f0', textAlign: 'left' }}>
+              {['Mascota', 'Especie / Raza', 'Dueño', 'Edad', 'Estado', 'Acciones'].map(h => (
+                <th key={h} style={{ padding: '12px', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '13px' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {pets.length > 0 ? (
-              pets.map((pet) => (
-                <tr
-                  key={pet.id}
-                  onMouseEnter={() => setHoveredRow(pet.id)}
-                  onMouseLeave={() => setHoveredRow(null)}
-                  style={{
-                    borderTop: "1px solid #f1f5f9",
-                    background: hoveredRow === pet.id ? "#fafbff" : "#fff",
-                    transition: "background 0.15s",
-                    cursor: "default",
-                  }}
-                >
-                  {/* Name */}
-                  <td style={{ padding: "14px 20px" }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: "38px",
-                          height: "38px",
-                          borderRadius: "10px",
-                          background: getAvatarColor(pet.name),
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          color: "#fff",
-                          fontWeight: 700,
-                          fontSize: "15px",
-                          flexShrink: 0,
-                        }}
-                      >
-                        {pet.name[0].toUpperCase()}
-                      </div>
-                      <span
-                        style={{
-                          fontWeight: 600,
-                          fontSize: "14px",
-                          color: "#0f172a",
-                        }}
-                      >
-                        {pet.name}
-                      </span>
+            {filtered.length > 0 ? filtered.map(pet => (
+              <tr
+                key={pet.id}
+                style={{
+                  borderBottom: '1px solid #f8f8f8',
+                  opacity: pet.is_active ? 1 : 0.5,
+                  transition: 'opacity 0.2s',
+                }}
+              >
+                {/* Name */}
+                <td style={{ padding: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{
+                      width: '36px', height: '36px', borderRadius: '10px',
+                      background: '#f0fdf4', border: '1.5px solid rgba(34,197,94,0.2)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      <Dog size={18} color="var(--primary)" />
                     </div>
-                  </td>
+                    <span style={{ fontWeight: 600, fontSize: '14px', color: '#0f172a' }}>{pet.name}</span>
+                  </div>
+                </td>
 
-                  {/* Species */}
-                  <td style={{ padding: "14px 20px" }}>
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "5px",
-                        fontSize: "13px",
-                        color: "#475569",
-                      }}
+                {/* Species / Breed */}
+                <td style={{ padding: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#475569', fontSize: '13px' }}>
+                    <SpeciesIcon species={pet.species} />
+                    {pet.species}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>{pet.breed}</div>
+                </td>
+
+                {/* Owner */}
+                <td style={{ padding: '12px', fontSize: '13px', color: '#64748b' }}>
+                  {ownerName(pet.owner_id)}
+                </td>
+
+                {/* Age */}
+                <td style={{ padding: '12px' }}>
+                  <span style={{ fontWeight: 600, fontSize: '13px' }}>{pet.age}</span>
+                  <span style={{ fontSize: '12px', color: '#94a3b8', marginLeft: '3px' }}>años</span>
+                </td>
+
+                {/* Status badge */}
+                <td style={{ padding: '12px' }}>
+                  <span style={{
+                    padding: '3px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: 600,
+                    background: pet.is_active ? '#d1fae5' : '#fee2e2',
+                    color: pet.is_active ? '#059669' : '#dc2626',
+                  }}>
+                    {pet.is_active ? 'Activa' : 'Inactiva'}
+                  </span>
+                </td>
+
+                {/* Actions */}
+                <td style={{ padding: '12px' }}>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      title="Editar"
+                      onClick={() => setEditPet(pet)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', padding: '4px' }}
                     >
-                      {getSpeciesIcon(pet.species)}
-                      {pet.species}
-                    </span>
-                  </td>
-
-                  {/* Breed */}
-                  <td
-                    style={{
-                      padding: "14px 20px",
-                      fontSize: "13px",
-                      color: "#64748b",
-                    }}
-                  >
-                    {pet.breed}
-                  </td>
-
-                  {/* Status */}
-                  <td style={{ padding: "14px 20px" }}>
-                    <StatusBadge status={(pet as any).status} />
-                  </td>
-
-                  {/* Age */}
-                  <td style={{ padding: "14px 20px" }}>
-                    <span
-                      style={{
-                        fontWeight: 600,
-                        fontSize: "13px",
-                        color: "#0f172a",
-                      }}
-                    >
-                      {pet.age}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: "12px",
-                        color: "#94a3b8",
-                        marginLeft: "3px",
-                      }}
-                    >
-                      yrs
-                    </span>
-                  </td>
-                </tr>
-              ))
-            ) : (
+                      <Edit2 size={16} />
+                    </button>
+                    {pet.is_active && (
+                      <button
+                        title="Desactivar"
+                        onClick={() => setConfirmPet(pet)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--error)', padding: '4px' }}
+                      >
+                        <PowerOff size={16} />
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            )) : (
               <tr>
-                <td colSpan={5}>
-                  <div
-                    style={{
-                      textAlign: "center",
-                      padding: "4rem",
-                      color: "#94a3b8",
-                    }}
-                  >
-                    <Heart
-                      size={40}
-                      style={{
-                        margin: "0 auto 12px",
-                        opacity: 0.3,
-                        display: "block",
-                      }}
-                    />
-                    <p style={{ margin: 0, fontWeight: 600, color: "#cbd5e1" }}>
-                      No pets registered yet
-                    </p>
-                    <p style={{ margin: "4px 0 0", fontSize: "13px" }}>
-                      Patients will appear here once added.
+                <td colSpan={6}>
+                  <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                    <Heart size={36} style={{ margin: '0 auto 10px', opacity: 0.3, display: 'block' }} />
+                    <p style={{ margin: 0, fontWeight: 600 }}>
+                      {searchQuery ? `Sin resultados para "${searchQuery}"` : 'No hay mascotas registradas'}
                     </p>
                   </div>
                 </td>
@@ -325,8 +289,29 @@ const PetList: React.FC = () => {
           </tbody>
         </table>
       </div>
-    </div>
-  );
-};
 
-export default PetList;
+      <ConfirmDialog
+        isOpen={!!confirmPet}
+        title="Desactivar Mascota"
+        message={`¿Desactivar a ${confirmPet?.name}? Podrá reactivarse desde administración.`}
+        confirmLabel="Desactivar"
+        variant="warning"
+        onConfirm={() => { if (confirmPet) handleDeactivate(confirmPet); setConfirmPet(null) }}
+        onCancel={() => setConfirmPet(null)}
+      />
+
+      {/* Edit Modal */}
+      <Modal isOpen={!!editPet} onClose={() => setEditPet(null)} title="Editar Mascota">
+        {editPet && (
+          <EditPetForm
+            pet={editPet}
+            onSuccess={handleEditSuccess}
+            onCancel={() => setEditPet(null)}
+          />
+        )}
+      </Modal>
+    </>
+  )
+}
+
+export default PetList

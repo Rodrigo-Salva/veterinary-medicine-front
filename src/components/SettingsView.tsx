@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Save, Building2, Clock, DollarSign, Phone, Mail, Globe, CheckCircle } from 'lucide-react'
+import { Save, Building2, Clock, DollarSign, Phone, Mail, Globe, CheckCircle, Settings } from 'lucide-react'
 
 const DEFAULTS = {
   clinic_name: 'VetCare Pro',
@@ -71,7 +71,7 @@ const SettingsView: React.FC = () => {
       `}</style>
 
       <div className="set-header">
-        <div className="set-title">⚙️ Configuración</div>
+        <div className="set-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Settings size={20} /> Configuración</div>
         <button className={`set-save-btn${saved ? ' saved' : ''}`} onClick={handleSave}>
           {saved ? <><CheckCircle size={16} /> Guardado</> : <><Save size={16} /> Guardar Cambios</>}
         </button>

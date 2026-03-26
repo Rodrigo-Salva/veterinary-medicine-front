@@ -58,7 +58,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({ onSuccess, onCancel }
 
   return (
     <form onSubmit={handleSubmit} className="management-form-premium">
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+      <div className="form-row">
         <div className="form-group">
           <label style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px', display: 'block' }}>Dueño</label>
           <select
@@ -126,11 +126,11 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({ onSuccess, onCancel }
           onChange={(e) => setFormData({ ...formData, cost: parseFloat(e.target.value) })}
         />
       </div>
-      <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
-        <button type="button" onClick={onCancel} style={{ flex: 1, padding: '14px', borderRadius: '16px', background: 'white', border: '1px solid #e2e8f0', fontWeight: '600', color: '#64748b' }}>
+      <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+        <button type="button" onClick={onCancel} className="btn" style={{ flex: 1, background: '#f1f5f9', color: '#475569' }}>
           Cancelar
         </button>
-        <button type="submit" className="btn-premium" style={{ flex: 2, justifyContent: 'center' }} disabled={loading}>
+        <button type="submit" className="btn" disabled={loading} style={{ flex: 2, background: 'var(--primary)', color: 'white' }}>
           {loading ? 'Agendando...' : 'Agendar Cita'}
         </button>
       </div>

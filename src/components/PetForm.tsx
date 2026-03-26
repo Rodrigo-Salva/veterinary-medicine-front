@@ -61,7 +61,7 @@ const PetForm: React.FC<PetFormProps> = ({ onSuccess, onCancel }) => {
           placeholder="Luna"
         />
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+      <div className="form-row">
         <div className="form-group">
           <label style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px', display: 'block' }}>Especie</label>
           <input
@@ -115,11 +115,11 @@ const PetForm: React.FC<PetFormProps> = ({ onSuccess, onCancel }) => {
           <p style={{ fontSize: '12px', color: '#ef4444', marginTop: '4px' }}>No hay dueños. Cree uno primero.</p>
         )}
       </div>
-      <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
-        <button type="button" onClick={onCancel} style={{ flex: 1, padding: '14px', borderRadius: '16px', background: 'white', border: '1px solid #e2e8f0', fontWeight: '600', color: '#64748b' }}>
+      <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+        <button type="button" onClick={onCancel} className="btn" style={{ flex: 1, background: '#f1f5f9', color: '#475569' }}>
           Cancelar
         </button>
-        <button type="submit" className="btn-premium" style={{ flex: 2, justifyContent: 'center' }} disabled={loading || owners.length === 0}>
+        <button type="submit" className="btn" disabled={loading || owners.length === 0} style={{ flex: 2, background: 'var(--primary)', color: 'white' }}>
           {loading ? 'Registrando...' : 'Registrar Mascota'}
         </button>
       </div>

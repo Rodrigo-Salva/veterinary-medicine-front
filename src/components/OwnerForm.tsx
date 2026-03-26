@@ -76,11 +76,11 @@ const OwnerForm: React.FC<OwnerFormProps> = ({ onSuccess, onCancel }) => {
           placeholder="+56 9 1234 5678"
         />
       </div>
-      <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
-        <button type="button" onClick={onCancel} style={{ flex: 1, padding: '14px', borderRadius: '16px', background: 'white', border: '1px solid #e2e8f0', fontWeight: '600', color: '#64748b' }}>
+      <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+        <button type="button" onClick={onCancel} className="btn" style={{ flex: 1, background: '#f1f5f9', color: '#475569' }}>
           Cancelar
         </button>
-        <button type="submit" className="btn-premium" style={{ flex: 2, justifyContent: 'center' }} disabled={loading}>
+        <button type="submit" className="btn" disabled={loading} style={{ flex: 2, background: 'var(--primary)', color: 'white' }}>
           {loading ? 'Guardando...' : 'Crear Dueño'}
         </button>
       </div>

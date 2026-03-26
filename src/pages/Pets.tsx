@@ -1,28 +1,53 @@
-import React from 'react';
-import PetList from '../components/PetList';
+import React, { useState } from 'react'
+import PetList from '../components/PetList'
+import Modal from '../components/Modal'
+import PetForm from '../components/PetForm'
+import { Plus, Search } from 'lucide-react'
 
 const Pets: React.FC = () => {
+  const [showModal, setShowModal] = useState(false)
+  const [search, setSearch] = useState('')
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const handleSuccess = () => {
+    setShowModal(false)
+    setRefreshKey(k => k + 1)
+  }
+
   return (
-    <div className="fade-in" style={{ 
-      display: 'flex', 
-      flexDirection: 'column',
-      height: '100%',
-      gap: '24px',
-      padding: '24px',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: '#0f172a' }}>Mascotas</h1>
-          <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#94a3b8' }}>Gestión de pacientes registrados</p>
+    <div className="dashboard-container">
+      {/* Header */}
+      <div className="header-row">
+        <div className="greetings">
+          <h2 style={{ fontSize: '24px', fontWeight: 700 }}>Mascotas</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Gestión de pacientes registrados</p>
         </div>
+        <div className="search-bar">
+          <Search size={18} color="#7c7c7c" />
+          <input
+            type="text"
+            placeholder="Buscar por nombre, especie, raza..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+        <button
+          className="btn"
+          onClick={() => setShowModal(true)}
+          style={{ background: 'var(--primary)', color: 'white' }}
+        >
+          <Plus size={18} />
+          Nueva Mascota
+        </button>
       </div>
 
-      {/* PetList crece para llenar todo el espacio restante */}
-      <div style={{ flex: 1, minHeight: 0 }}>
-        <PetList />
-      </div>
+      <PetList key={refreshKey} searchQuery={search} />
+
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Registrar Mascota">
+        <PetForm onSuccess={handleSuccess} onCancel={() => setShowModal(false)} />
+      </Modal>
     </div>
-  );
-};
+  )
+}
 
-export default Pets;
+export default Pets
