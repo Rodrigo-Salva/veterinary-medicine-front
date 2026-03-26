@@ -14,6 +14,7 @@ import { inventoryService } from '../services/api'
 import { Product } from '../types'
 import Modal from './Modal'
 import ProductForm from './ProductForm'
+import ConfirmDialog from './ConfirmDialog'
 
 const InventoryView: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -21,6 +22,7 @@ const InventoryView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | undefined>(undefined);
+  const [confirmProduct, setConfirmProduct] = useState<Product | null>(null);
 
   const fetchProducts = async () => {
     try {
@@ -44,13 +46,11 @@ const InventoryView: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      try {
-        await inventoryService.delete(id);
-        fetchProducts();
-      } catch (error) {
-        console.error('Error deleting product:', error);
-      }
+    try {
+      await inventoryService.delete(id);
+      fetchProducts();
+    } catch (error) {
+      console.error('Error deleting product:', error);
     }
   };
 
@@ -83,21 +83,10 @@ const InventoryView: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <button 
-          className="btn" 
+        <button
+          className="btn"
           onClick={() => { setSelectedProduct(undefined); setIsModalOpen(true); }}
-          style={{ 
-            background: 'var(--primary)', 
-            color: 'white', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px', 
-            border: 'none', 
-            borderRadius: '12px', 
-            padding: '10px 20px', 
-            cursor: 'pointer',
-            fontWeight: 600
-          }}
+          style={{ background: 'var(--primary)', color: 'white' }}
         >
           <Plus size={18} />
           Nuevo Producto
@@ -174,8 +163,8 @@ const InventoryView: React.FC = () => {
                     >
                       <Edit2 size={16} />
                     </button>
-                    <button 
-                      onClick={() => handleDelete(product.id)}
+                    <button
+                      onClick={() => setConfirmProduct(product)}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--error)' }}
                     >
                       <Trash2 size={16} />
@@ -188,7 +177,17 @@ const InventoryView: React.FC = () => {
         </table>
       </div>
 
-      <Modal 
+      <ConfirmDialog
+        isOpen={!!confirmProduct}
+        title="Eliminar Producto"
+        message={`¿Eliminar "${confirmProduct?.name}" del inventario? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        variant="danger"
+        onConfirm={() => { if (confirmProduct) handleDelete(confirmProduct.id); setConfirmProduct(null) }}
+        onCancel={() => setConfirmProduct(null)}
+      />
+
+      <Modal
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         title={selectedProduct ? 'Editar Producto' : 'Nuevo Producto'}
