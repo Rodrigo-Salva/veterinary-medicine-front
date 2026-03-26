@@ -1,12 +1,27 @@
-export interface Pet {
-  id: string;
-  name: string;
-  species: string;
-  breed: string;
-  age: number;
-  owner_id: string;
-  medical_history?: string;
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+export interface User {
+  username: string;
+  email: string;
+  role: 'Admin' | 'Vet' | 'Receptionist';
+  is_active?: boolean;
 }
+
+export interface UserCreate {
+  username: string;
+  email: string;
+  password: string;
+  role: 'Admin' | 'Vet' | 'Receptionist';
+  is_active?: boolean;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  user: User;
+}
+
+// ─── Owner ────────────────────────────────────────────────────────────────────
 
 export interface Owner {
   id: string;
@@ -18,19 +33,43 @@ export interface Owner {
 
 export type OwnerCreate = Omit<Owner, 'id'>;
 
-export type PetCreate = Omit<Pet, 'id' | 'medical_history'>;
+// ─── Pet ──────────────────────────────────────────────────────────────────────
 
-export interface Product {
+export interface Pet {
   id: string;
   name: string;
-  description?: string;
-  purchase_price: number;
-  sale_price: number;
-  stock: number;
-  category: string;
+  species: string;
+  breed: string;
+  age: number;
+  owner_id: string;
+  medical_history?: string;
+  is_active: boolean;
 }
 
-export type ProductCreate = Omit<Product, 'id'>;
+export type PetCreate = Omit<Pet, 'id' | 'medical_history' | 'is_active'>;
+
+export interface PetUpdate {
+  name?: string;
+  species?: string;
+  breed?: string;
+  age?: number;
+}
+
+// ─── Appointment ──────────────────────────────────────────────────────────────
+
+export interface Appointment {
+  id: string;
+  pet_id: string;
+  owner_id: string;
+  date: string;
+  reason: string;
+  status: 'Pending' | 'Success' | 'Failed';
+  cost: number;
+}
+
+export type AppointmentCreate = Omit<Appointment, 'id' | 'status'>;
+
+// ─── Medical Record ───────────────────────────────────────────────────────────
 
 export interface MedicalRecord {
   id: string;
@@ -43,6 +82,17 @@ export interface MedicalRecord {
   next_date?: string;
   vet_id?: string;
 }
+
+export interface MedicalRecordCreate {
+  pet_id: string;
+  description: string;
+  diagnosis: string;
+  treatment: string;
+  record_type: string;
+  next_date?: string | null;
+}
+
+// ─── Prescription ─────────────────────────────────────────────────────────────
 
 export interface Prescription {
   id: string;
@@ -60,6 +110,8 @@ export interface PrescriptionCreate {
   medical_record_id?: string;
 }
 
+// ─── Vaccine Reminder ─────────────────────────────────────────────────────────
+
 export interface VaccineReminder {
   pet_id: string;
   pet_name: string;
@@ -67,6 +119,8 @@ export interface VaccineReminder {
   record_type: string;
   next_date: string;
 }
+
+// ─── Attachment ───────────────────────────────────────────────────────────────
 
 export interface Attachment {
   id: string;
@@ -77,35 +131,97 @@ export interface Attachment {
   upload_date: string;
 }
 
-export interface Appointment {
+// ─── Inventory ────────────────────────────────────────────────────────────────
+
+export interface Product {
+  id: string;
+  name: string;
+  description?: string;
+  purchase_price: number;
+  sale_price: number;
+  stock: number;
+  category: string;
+}
+
+export type ProductCreate = Omit<Product, 'id'>;
+
+// ─── Hospital ─────────────────────────────────────────────────────────────────
+
+export interface Cage {
+  id: string;
+  name: string;
+  is_occupied: boolean;
+  current_pet_id?: string;
+}
+
+export interface VitalSign {
+  id: string;
+  temperature: number;
+  heart_rate: number;
+  respiratory_rate: number;
+  notes: string;
+  timestamp: string;
+}
+
+export interface VitalSignCreate {
+  hospitalization_id: string;
+  temperature: number;
+  heart_rate: number;
+  respiratory_rate: number;
+  notes: string;
+}
+
+export interface Hospitalization {
+  id: string;
+  pet_id: string;
+  cage_id: string;
+  reason: string;
+  check_in_date: string;
+  check_out_date?: string;
+  status: string;
+  vital_signs: VitalSign[];
+}
+
+export interface HospitalizationCreate {
+  pet_id: string;
+  cage_id: string;
+  reason: string;
+}
+
+// ─── Billing ──────────────────────────────────────────────────────────────────
+
+export interface InvoiceItem {
+  id: string;
+  invoice_id: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
+}
+
+export interface InvoiceItemCreate {
+  description: string;
+  quantity?: number;
+  unit_price: number;
+}
+
+export interface Invoice {
   id: string;
   pet_id: string;
   owner_id: string;
   date: string;
-  reason: string;
-  status?: string;
-  cost: number;
+  subtotal: number;
+  tax_rate: number;
+  total: number;
+  status: 'Pending' | 'Paid' | 'Cancelled';
+  notes?: string;
+  items: InvoiceItem[];
 }
 
-export type AppointmentCreate = Omit<Appointment, 'id'>;
-
-export interface MedicalRecordCreate {
+export interface InvoiceCreate {
   pet_id: string;
-  description: string;
-  diagnosis: string;
-  treatment: string;
-  record_type: string;
-  next_date?: string | null;
-}
-
-export interface User {
-  username: string;
-  email: string;
-  role: 'Admin' | 'Vet' | 'Receptionist';
-}
-
-export interface AuthResponse {
-  access_token: string;
-  token_type: string;
-  user: User;
+  owner_id: string;
+  items: InvoiceItemCreate[];
+  tax_rate?: number;
+  notes?: string;
 }
