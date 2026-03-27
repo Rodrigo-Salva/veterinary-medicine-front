@@ -6,6 +6,7 @@ import { searchService } from './services/api'
 import {
   LayoutDashboard, Dog, Calendar, FileText, Settings, LogOut,
   Search, Package, Shield, TrendingUp, CreditCard, X, ChevronRight, UsersRound, BedDouble, UserCircle2,
+  KeyRound,
 } from 'lucide-react'
 import Pets from './pages/Pets'
 import Dashboard from './components/Dashboard'
@@ -14,11 +15,13 @@ import HospitalView from './components/HospitalView'
 import MedicalHistoryView from './components/MedicalHistoryView'
 import InventoryView from './components/InventoryView'
 import UserManagement from './components/UserManagement'
+import RoleManagement from './components/RoleManagement'
 import CalendarView from './components/CalendarView'
 import ReportsView from './components/ReportsView'
 import BillingView from './components/BillingView'
 import SettingsView from './components/SettingsView'
 import OwnersView from './components/OwnersView'
+import NotificationCenter from './components/NotificationCenter'
 
 
 const GlobalSearch: React.FC<{ onClose: () => void }> = ({ onClose }) => {
@@ -133,7 +136,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon, label, expanded }) => (
 )
 
 const AppContent: React.FC = () => {
-  const { isAuthenticated, logout, user } = useAuth()
+  const { isAuthenticated, logout, user, hasPermission } = useAuth()
   const [showSearch, setShowSearch] = useState(false)
   const sidebarOpen = true
 
@@ -163,17 +166,20 @@ const AppContent: React.FC = () => {
         {/* Nav links */}
         <nav className="nav-icon-list">
           <NavItem to="/"          icon={<LayoutDashboard size={20} />} label="Dashboard"       expanded={sidebarOpen} />
-          <NavItem to="/pets"      icon={<Dog size={20} />}             label="Mascotas"         expanded={sidebarOpen} />
-          <NavItem to="/owners"    icon={<UsersRound size={20} />}     label="Propietarios"     expanded={sidebarOpen} />
-          <NavItem to='/calendar' icon={<Calendar size={20}/>}  label='Calendario' expanded={sidebarOpen}/>
-          {/* <NavItem to="/hospital"  icon={<BedDouble size={20} />} label="Hospitalización" expanded={sidebarOpen} /> */}
-          {/* <NavItem to="/inventory" icon={<Package size={20} />}         label="Inventario"       expanded={sidebarOpen} />
-          <NavItem to="/calendar"  icon={<Calendar size={20} />}        label="Calendario"       expanded={sidebarOpen} />
-          <NavItem to="/history"   icon={<FileText size={20} />}        label="Historial Clínico" expanded={sidebarOpen} />
-          <NavItem to="/reports"   icon={<TrendingUp size={20} />}      label="Reportes"         expanded={sidebarOpen} />
-          <NavItem to="/billing"   icon={<CreditCard size={20} />}      label="Facturación"      expanded={sidebarOpen} /> */}
-          {user?.role === 'Admin' && (
+          {hasPermission('mascotas', 'listar') && (
+            <NavItem to="/pets"      icon={<Dog size={20} />}             label="Mascotas"         expanded={sidebarOpen} />
+          )}
+          {hasPermission('propietarios', 'listar') && (
+            <NavItem to="/owners"    icon={<UsersRound size={20} />}     label="Propietarios"     expanded={sidebarOpen} />
+          )}
+          {hasPermission('citas', 'listar') && (
+            <NavItem to='/calendar' icon={<Calendar size={20}/>}  label='Calendario' expanded={sidebarOpen}/>
+          )}
+          {hasPermission('usuarios', 'listar') && (
             <NavItem to="/users"   icon={<Shield size={20} />}          label="Usuarios"         expanded={sidebarOpen} />
+          )}
+          {hasPermission('roles', 'listar') && (
+            <NavItem to="/roles"   icon={<KeyRound size={20} />}        label="Roles"            expanded={sidebarOpen} />
           )}
 
           <div className="nav-spacer" />
@@ -202,16 +208,17 @@ const AppContent: React.FC = () => {
         <main style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           <Routes>
             <Route path="/"        element={<Dashboard />} />
-            <Route path="/pets"    element={<Pets />} />
-            <Route path="/owners"  element={<OwnersView />} />
-            <Route path="/hospital" element={<HospitalView />} />
-            <Route path="/inventory" element={<InventoryView />} />
-            <Route path="/calendar" element={<CalendarView />} />
-            <Route path="/history" element={<MedicalHistoryView />} />
+            <Route path="/pets"    element={hasPermission('mascotas', 'listar') ? <Pets /> : <Navigate to="/" replace />} />
+            <Route path="/owners"  element={hasPermission('propietarios', 'listar') ? <OwnersView /> : <Navigate to="/" replace />} />
+            <Route path="/hospital" element={hasPermission('hospitalizacion', 'listar') ? <HospitalView /> : <Navigate to="/" replace />} />
+            <Route path="/inventory" element={hasPermission('inventario', 'listar') ? <InventoryView /> : <Navigate to="/" replace />} />
+            <Route path="/calendar" element={hasPermission('citas', 'listar') ? <CalendarView /> : <Navigate to="/" replace />} />
+            <Route path="/history" element={hasPermission('historial_medico', 'listar') ? <MedicalHistoryView /> : <Navigate to="/" replace />} />
             <Route path="/reports" element={<ReportsView />} />
-            <Route path="/billing" element={<BillingView />} />
+            <Route path="/billing" element={hasPermission('facturacion', 'listar') ? <BillingView /> : <Navigate to="/" replace />} />
             <Route path="/settings" element={<SettingsView />} />
-            <Route path="/users"   element={user?.role === 'Admin' ? <UserManagement /> : <Navigate to="/" replace />} />
+            <Route path="/users"   element={hasPermission('usuarios', 'listar') ? <UserManagement /> : <Navigate to="/" replace />} />
+            <Route path="/roles"   element={hasPermission('roles', 'listar') ? <RoleManagement /> : <Navigate to="/" replace />} />
             <Route path="*"        element={<Navigate to="/" replace />} />
           </Routes>
         </main>

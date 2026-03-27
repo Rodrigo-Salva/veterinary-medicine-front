@@ -7,6 +7,7 @@ import {
 import { statsService } from '../services/api'
 import VaccineReminders from './VaccineReminders'
 import PetList from './PetList'
+import HeaderActions from './HeaderActions'
 
 // ── Utilidades de fecha/hora en español ──────────────────────────────────────
 const getSaludo = () => {
@@ -89,7 +90,7 @@ const Dashboard: React.FC = () => {
     <div className="dashboard-container">
 
       {/* ── Saludo ── */}
-      <div className="header-row" style={{ marginBottom: 0 }}>
+      <div className="header-row" style={{ marginBottom: 20 }}>
         <div className="greetings">
           <h2 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)' }}>
             {getSaludo()}, {user?.username}
@@ -98,16 +99,7 @@ const Dashboard: React.FC = () => {
             {getFechaES()}
           </p>
         </div>
-        <div className="user-profile-badge">
-          <div style={{
-            width: '28px', height: '28px', borderRadius: '8px',
-            background: '#22c55e', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', color: '#0d2b2b',
-          }}>
-            <UserCircle size={18} color="#0d2b2b" />
-          </div>
-          <span style={{ fontSize: '13px', fontWeight: 600 }}>{user?.username}</span>
-        </div>
+        <HeaderActions />
       </div>
 
       {/* ── KPI Cards (4 columnas: oscura, clara, clara, oscura) ── */}
