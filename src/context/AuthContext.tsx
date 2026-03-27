@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, AuthResponse } from '../types';
 
 interface AuthContextType {
@@ -7,6 +7,7 @@ interface AuthContextType {
   login: (authData: AuthResponse) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  hasPermission: (module: string, action: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,6 +44,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('user');
   };
 
+  const hasPermission = useCallback((module: string, action: string): boolean => {
+    if (!user?.permissions) return false;
+    return user.permissions.some(p => p.module === module && p.action === action);
+  }, [user]);
+
   // Forzar logout cuando el interceptor de axios detecta un 401 (token expirado)
   useEffect(() => {
     const handleForcedLogout = () => {
@@ -54,7 +60,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, token, login: loginAction, logout: logoutAction, isAuthenticated: !!token }}>
+    <AuthContext.Provider value={{
+      user, token, login: loginAction, logout: logoutAction,
+      isAuthenticated: !!token, hasPermission,
+    }}>
       {children}
     </AuthContext.Provider>
   );
