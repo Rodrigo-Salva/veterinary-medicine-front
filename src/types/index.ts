@@ -1,24 +1,51 @@
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
+export interface PermissionItem {
+  module: string;
+  action: string;
+}
+
 export interface User {
   username: string;
   email: string;
-  role: 'Admin' | 'Vet' | 'Receptionist';
+  role_id: string;
+  role_name: string;
   is_active?: boolean;
+  permissions: PermissionItem[];
 }
 
 export interface UserCreate {
   username: string;
   email: string;
   password: string;
-  role: 'Admin' | 'Vet' | 'Receptionist';
-  is_active?: boolean;
+  role_id: string;
 }
 
 export interface AuthResponse {
   access_token: string;
   token_type: string;
   user: User;
+}
+
+// ─── Roles & Permissions ─────────────────────────────────────────────────────
+
+export interface Permission {
+  id: string;
+  module: string;
+  action: string;
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  description?: string;
+  is_active: boolean;
+  permissions: Permission[];
+}
+
+export interface RoleCreate {
+  name: string;
+  description?: string;
 }
 
 // ─── Owner ────────────────────────────────────────────────────────────────────
@@ -35,6 +62,14 @@ export type OwnerCreate = Omit<Owner, 'id'>;
 
 // ─── Pet ──────────────────────────────────────────────────────────────────────
 
+export interface WeightRecord {
+  id: string;
+  pet_id: string;
+  weight: number;
+  recorded_date: string;
+  notes?: string;
+}
+
 export interface Pet {
   id: string;
   name: string;
@@ -44,15 +79,56 @@ export interface Pet {
   owner_id: string;
   medical_history?: string;
   is_active: boolean;
+  photo_url?: string;
+  sex?: string;
+  color?: string;
+  weight?: number;
+  allergies?: string;
+  is_neutered: boolean;
+  microchip?: string;
+  birth_date?: string;
+  notes?: string;
+  weight_history?: WeightRecord[];
 }
 
-export type PetCreate = Omit<Pet, 'id' | 'medical_history' | 'is_active'>;
+export interface PetCreate {
+  name: string;
+  species: string;
+  breed: string;
+  age: number;
+  owner_id: string;
+  sex?: string;
+  color?: string;
+  weight?: number;
+  allergies?: string;
+  is_neutered?: boolean;
+  microchip?: string;
+  birth_date?: string;
+  notes?: string;
+}
 
 export interface PetUpdate {
   name?: string;
   species?: string;
   breed?: string;
   age?: number;
+  sex?: string;
+  color?: string;
+  weight?: number;
+  allergies?: string;
+  is_neutered?: boolean;
+  microchip?: string;
+  birth_date?: string;
+  notes?: string;
+}
+
+export interface Notification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  priority: 'high' | 'medium' | 'low';
+  timestamp: string;
 }
 
 // ─── Appointment ──────────────────────────────────────────────────────────────
