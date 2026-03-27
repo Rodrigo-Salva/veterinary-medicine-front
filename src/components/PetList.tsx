@@ -92,9 +92,10 @@ const EditPetForm: React.FC<EditFormProps> = ({ pet, onSuccess, onCancel }) => {
 
 interface PetListProps {
   searchQuery?: string
+  onSelectPet?: (petId: string) => void
 }
 
-const PetList: React.FC<PetListProps> = ({ searchQuery = '' }) => {
+const PetList: React.FC<PetListProps> = ({ searchQuery = '', onSelectPet }) => {
   const [pets, setPets] = useState<Pet[]>([])
   const [owners, setOwners] = useState<Owner[]>([])
   const [loading, setLoading] = useState(true)
@@ -217,7 +218,12 @@ const PetList: React.FC<PetListProps> = ({ searchQuery = '' }) => {
                     }}>
                       <Dog size={18} color="var(--primary)" />
                     </div>
-                    <span style={{ fontWeight: 600, fontSize: '14px', color: '#0f172a' }}>{pet.name}</span>
+                    <span
+                      onClick={() => onSelectPet?.(pet.id)}
+                      style={{ fontWeight: 600, fontSize: '14px', color: '#0f172a', cursor: onSelectPet ? 'pointer' : 'default', textDecoration: onSelectPet ? 'none' : 'none' }}
+                      onMouseEnter={e => { if (onSelectPet) (e.target as HTMLElement).style.color = 'var(--primary)' }}
+                      onMouseLeave={e => { (e.target as HTMLElement).style.color = '#0f172a' }}
+                    >{pet.name}</span>
                   </div>
                 </td>
 
