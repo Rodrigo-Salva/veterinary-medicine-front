@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Shield, UserPlus, Edit2, PowerOff, Loader2, Search, User as UserIcon } from 'lucide-react'
-import api from '../services/api'
+import api, { roleService } from '../services/api'
+import type { Role } from '../types'
 import Modal from './Modal'
 import ConfirmDialog from './ConfirmDialog'
 
@@ -8,7 +9,8 @@ interface UserData {
   id: string
   username: string
   email: string
-  role: string
+  role_id: string
+  role_name: string
   is_active: boolean
 }
 
@@ -18,39 +20,55 @@ const ROLE_STYLE: Record<string, { bg: string; color: string }> = {
   Receptionist: { bg: '#d1fae5', color: '#065f46' },
 }
 
-const AVATAR_COLORS = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#14b8a6']
-const avatarColor = (name: string) => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length]
+const ROLE_LABELS: Record<string, string> = {
+  Admin: 'Administrador',
+  Vet: 'Veterinario',
+  Receptionist: 'Recepcionista',
+}
 
 const UserManagement: React.FC = () => {
   const [users, setUsers]         = useState<UserData[]>([])
+  const [roles, setRoles]         = useState<Role[]>([])
   const [loading, setLoading]     = useState(true)
   const [search, setSearch]       = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editUser, setEditUser]   = useState<UserData | null>(null)
 
-  const [form, setForm] = useState({ username:'', email:'', password:'', role:'Vet' })
+  const [form, setForm] = useState({ username:'', email:'', password:'', role_id:'' })
   const [saving, setSaving] = useState(false)
   const [confirmToggle, setConfirmToggle] = useState<UserData | null>(null)
 
   const load = async () => {
     try {
-      const r = await api.get('/users/')
-      setUsers(r.data)
+      const [usersRes, rolesRes] = await Promise.all([
+        api.get('/users/'),
+        roleService.getAll(),
+      ])
+      setUsers(usersRes.data)
+      setRoles(rolesRes)
+      if (!form.role_id && rolesRes.length > 0) {
+        setForm(f => ({ ...f, role_id: rolesRes[0].id }))
+      }
     } catch { console.error('Error loading users') }
     finally { setLoading(false) }
   }
 
   useEffect(() => { load() }, [])
 
+  const getRoleName = (roleId: string) => {
+    const role = roles.find(r => r.id === roleId)
+    return role?.name || 'Sin rol'
+  }
+
   const openCreate = () => {
     setEditUser(null)
-    setForm({ username:'', email:'', password:'', role:'Vet' })
+    setForm({ username:'', email:'', password:'', role_id: roles[0]?.id || '' })
     setModalOpen(true)
   }
 
   const openEdit = (u: UserData) => {
     setEditUser(u)
-    setForm({ username: u.username, email: u.email, password:'', role: u.role })
+    setForm({ username: u.username, email: u.email, password:'', role_id: u.role_id })
     setModalOpen(true)
   }
 
@@ -58,7 +76,7 @@ const UserManagement: React.FC = () => {
     e.preventDefault(); setSaving(true)
     try {
       if (editUser) {
-        const payload: any = { username: form.username, email: form.email, role: form.role }
+        const payload: any = { username: form.username, email: form.email, role_id: form.role_id }
         if (form.password) payload.password = form.password
         await api.put(`/users/${editUser.id}`, payload)
       } else {
@@ -82,7 +100,8 @@ const UserManagement: React.FC = () => {
 
   const filtered = users.filter(u => {
     const q = search.toLowerCase()
-    return u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.role.toLowerCase().includes(q)
+    const roleName = getRoleName(u.role_id).toLowerCase()
+    return u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || roleName.includes(q)
   })
 
   const activeCount   = users.filter(u => u.is_active).length
@@ -93,7 +112,7 @@ const UserManagement: React.FC = () => {
       {/* Header */}
       <div className="header-row">
         <div className="greetings">
-          <h2 style={{ fontSize: '24px', fontWeight: 700 }}>Gestión de Usuarios</h2>
+          <h2 style={{ fontSize: '24px', fontWeight: 700 }}>Gestion de Usuarios</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Administra los accesos y roles de tu equipo</p>
         </div>
         <div className="search-bar">
@@ -156,10 +175,10 @@ const UserManagement: React.FC = () => {
             </thead>
             <tbody>
               {filtered.length > 0 ? filtered.map(u => {
-                const role = ROLE_STYLE[u.role] ?? { bg: '#f1f5f9', color: '#475569' }
+                const roleName = u.role_name || getRoleName(u.role_id)
+                const role = ROLE_STYLE[roleName] ?? { bg: '#f1f5f9', color: '#475569' }
                 return (
                   <tr key={u.id} style={{ borderBottom: '1px solid #f8f8f8', opacity: u.is_active ? 1 : 0.55 }}>
-                    {/* Avatar + name */}
                     <td style={{ padding: '12px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <div style={{
@@ -179,7 +198,7 @@ const UserManagement: React.FC = () => {
                         padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 600,
                         background: role.bg, color: role.color,
                       }}>
-                        {u.role === 'Receptionist' ? 'Recepcionista' : u.role === 'Vet' ? 'Veterinario' : 'Administrador'}
+                        {ROLE_LABELS[roleName] || roleName}
                       </span>
                     </td>
                     <td style={{ padding: '12px' }}>
@@ -217,6 +236,7 @@ const UserManagement: React.FC = () => {
 
       {confirmToggle && (
         <ConfirmDialog
+          isOpen={!!confirmToggle}
           title={confirmToggle.is_active ? 'Desactivar usuario' : 'Activar usuario'}
           message={`¿Deseas ${confirmToggle.is_active ? 'desactivar' : 'activar'} al usuario "${confirmToggle.username}"?`}
           confirmLabel={confirmToggle.is_active ? 'Desactivar' : 'Activar'}
@@ -241,23 +261,23 @@ const UserManagement: React.FC = () => {
               <label style={{ fontSize:'13px', fontWeight:600, color:'#64748b', marginBottom:'8px', display:'block' }}>
                 Rol
               </label>
-              <select className="input-premium" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}>
-                <option value="Admin">Administrador</option>
-                <option value="Vet">Veterinario</option>
-                <option value="Receptionist">Recepcionista</option>
+              <select className="input-premium" value={form.role_id} onChange={e => setForm(f => ({ ...f, role_id: e.target.value }))}>
+                {roles.map(r => (
+                  <option key={r.id} value={r.id}>{ROLE_LABELS[r.name] || r.name}</option>
+                ))}
               </select>
             </div>
           </div>
           <div className="form-group">
             <label style={{ fontSize:'13px', fontWeight:600, color:'#64748b', marginBottom:'8px', display:'block' }}>
-              Correo electrónico
+              Correo electronico
             </label>
             <input className="input-premium" type="email" required placeholder="correo@ejemplo.com"
               value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
           </div>
           <div className="form-group">
             <label style={{ fontSize:'13px', fontWeight:600, color:'#64748b', marginBottom:'8px', display:'block' }}>
-              Contraseña {editUser && <span style={{ fontWeight:400, color:'#94a3b8' }}>(dejar vacío para no cambiar)</span>}
+              Contrasena {editUser && <span style={{ fontWeight:400, color:'#94a3b8' }}>(dejar vacio para no cambiar)</span>}
             </label>
             <input className="input-premium" type="password" required={!editUser} placeholder="••••••••"
               value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} />

@@ -123,6 +123,7 @@ const HospitalView: React.FC = () => {
           <h2 style={{ fontSize: '24px', fontWeight: 700 }}>Hospitalización y Monitoreo</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Gestión de jaulas y cuidado crítico de pacientes</p>
         </div>
+        <HeaderActions />
       </div>
 
       {/* Stats */}

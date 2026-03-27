@@ -11,6 +11,8 @@ import type {
   Cage, Hospitalization, HospitalizationCreate, VitalSign, VitalSignCreate,
   Invoice, InvoiceCreate,
   AuthResponse,
+  Role, RoleCreate, Permission,
+  WeightRecord, Notification,
 } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL as string;
@@ -41,6 +43,21 @@ export const petService = {
   create: async (petData: PetCreate): Promise<Pet> => (await api.post<Pet>('/pets/', petData)).data,
   update: async (id: string, data: PetUpdate): Promise<Pet> => (await api.put<Pet>(`/pets/${id}`, data)).data,
   deactivate: async (id: string): Promise<Pet> => (await api.patch<Pet>(`/pets/${id}/deactivate`)).data,
+  uploadPhoto: async (id: string, file: File): Promise<Pet> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return (await api.post<Pet>(`/pets/${id}/photo`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })).data;
+  },
+  addWeight: async (id: string, data: { weight: number; recorded_date: string; notes?: string }): Promise<WeightRecord> =>
+    (await api.post<WeightRecord>(`/pets/${id}/weight`, data)).data,
+  getWeightHistory: async (id: string): Promise<WeightRecord[]> =>
+    (await api.get<WeightRecord[]>(`/pets/${id}/weight`)).data,
+};
+
+export const notificationService = {
+  getAll: async (): Promise<Notification[]> => (await api.get<Notification[]>('/notifications/')).data,
 };
 
 export const ownerService = {
@@ -154,8 +171,18 @@ export const searchService = {
 export const authService = {
   login: async (credentials: { username: string; password: string }): Promise<AuthResponse> =>
     (await api.post<AuthResponse>('/users/login', credentials)).data,
-  getMe: async (): Promise<{ username: string; email: string; role: string }> =>
-    (await api.get('/users/me')).data,
+  getMe: async () => (await api.get('/users/me')).data,
+};
+
+export const roleService = {
+  getAll: async (): Promise<Role[]> => (await api.get<Role[]>('/roles/')).data,
+  getById: async (id: string): Promise<Role> => (await api.get<Role>(`/roles/${id}`)).data,
+  create: async (data: RoleCreate): Promise<Role> => (await api.post<Role>('/roles/', data)).data,
+  update: async (id: string, data: RoleCreate): Promise<Role> => (await api.put<Role>(`/roles/${id}`, data)).data,
+  delete: async (id: string): Promise<void> => { await api.delete(`/roles/${id}`); },
+  getAllPermissions: async (): Promise<Permission[]> => (await api.get<Permission[]>('/roles/permissions')).data,
+  setPermissions: async (roleId: string, permissionIds: string[]): Promise<Role> =>
+    (await api.put<Role>(`/roles/${roleId}/permissions`, { permission_ids: permissionIds })).data,
 };
 
 export default api;
