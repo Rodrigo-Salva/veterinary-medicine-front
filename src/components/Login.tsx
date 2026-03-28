@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/api';
-import { LogIn, User, Lock, AlertCircle, ShieldCheck } from 'lucide-react';
+import { AlertCircle, PawPrint } from 'lucide-react';
 
 const Login: React.FC = () => {
   const { login } = useAuth();
@@ -14,7 +14,6 @@ const Login: React.FC = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
       const response = await authService.login({ username, password });
       login(response);
@@ -26,101 +25,91 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="pawtastic-screen">
-      <div className="pawtastic-card animate-fade-in">
-        <div className="pawtastic-body">
-          {/* Left Side: Stepper & Dog */}
-          <div className="pawtastic-left">
-            <div className="pawtastic-logo">
-              <div style={{ width: '40px', height: '40px', backgroundColor: '#fdf2f0', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <ShieldCheck size={24} color="#4a526d" />
-              </div>
-              VETPREMIUM
-            </div>
+    <div className="paw-screen">
+      <div className="paw-card">
 
-            <div className="pawtastic-stepper">
-              <div className="step-item active">
-                <div className="step-dot"></div>
-                Identificación
-              </div>
-              <div className="step-item">
-                <div className="step-dot"></div>
-                Seguridad
-              </div>
-              <div className="step-item">
-                <div className="step-dot"></div>
-                Confirmación
-              </div>
+        {/* ── Panel izquierdo ── */}
+        <div className="paw-left">
+          <div className="paw-logo">
+            <div className="paw-logo-icon">
+              <PawPrint size={20} color="#fff" />
             </div>
-
-            <img 
-              src="/login-bg.png" 
-              alt="Dog background" 
-              className="pawtastic-dog"
-            />
-            
-            <div style={{ position: 'absolute', bottom: 20, left: 40, zIndex: 20, fontSize: '0.9rem', opacity: 0.8 }}>
-              Save and exit
-            </div>
+            VETPREMIUM
           </div>
 
-          {/* Right Side: Form */}
-          <div className="pawtastic-right">
-            <h1>Expertos en cuidado animal. <br /> Inicia sesión para continuar.</h1>
+          <nav className="paw-steps">
+            <div className="paw-step">
+              <div className="paw-step-dot"></div>
+              <span>Perfil</span>
+            </div>
+            <div className="paw-step active">
+              <div className="paw-step-dot"></div>
+              <span>Identificación</span>
+            </div>
+            <div className="paw-step">
+              <div className="paw-step-dot"></div>
+              <span>Seguridad</span>
+            </div>
+            <div className="paw-step">
+              <div className="paw-step-dot"></div>
+              <span>Confirmar</span>
+            </div>
+          </nav>
+
+          <img src="/login-bg.png" alt="" className="paw-dog-img" />
+
+          <span className="paw-save">Guardar y salir</span>
+        </div>
+
+        {/* ── Panel derecho ── */}
+        <div className="paw-right">
+          <div className="paw-right-inner">
+            <h1 className="paw-title">
+              Expertos en cuidado animal.<br />
+              Inicia sesión para continuar.
+            </h1>
 
             {error && (
-              <div style={{ 
-                marginBottom: '2rem', padding: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', 
-                border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '1rem', 
-                display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#f87171' 
-              }} className="animate-shake">
-                <AlertCircle size={20} />
-                <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>{error}</span>
+              <div className="paw-error">
+                <AlertCircle size={16} />
+                <span>{error}</span>
               </div>
             )}
 
-            <form id="login-form" onSubmit={handleSubmit} style={{ flex: 1 }}>
-              <div className="pawtastic-input-group">
-                <label>Usuario</label>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="pawtastic-input"
-                  placeholder="Ej. rodrigo_vet"
-                  required
-                />
-              </div>
-
-              <div className="pawtastic-input-group">
-                <label>Contraseña</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pawtastic-input"
-                  placeholder="••••••••"
-                  required
-                />
+            <form id="paw-form" onSubmit={handleSubmit} className="paw-form">
+              <div className="paw-grid-2">
+                <div className="paw-field">
+                  <label>Usuario</label>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={e => setUsername(e.target.value)}
+                    placeholder="Ej. rodrigo_vet"
+                    required
+                  />
+                </div>
+                <div className="paw-field">
+                  <label>Contraseña</label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
               </div>
             </form>
+
+            <div className="paw-footer">
+              <button type="button" className="paw-btn-back">Ayuda</button>
+              <button form="paw-form" type="submit" className="paw-btn-next" disabled={loading}>
+                {loading ? 'Cargando...' : 'Siguiente'}
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="pawtastic-footer">
-          <button type="button" className="btn-back">
-            Ayuda
-          </button>
-          <button 
-            form="login-form" 
-            type="submit" 
-            className="btn-next"
-            disabled={loading}
-          >
-            {loading ? 'Cargando...' : 'Siguiente'}
-          </button>
-        </div>
       </div>
     </div>
   );

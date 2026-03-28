@@ -1,0 +1,11 @@
+services:
+
+  frontend:
+    build:
+      context: .
+      args:
+        VITE_API_URL: http://localhost:8000
+    container_name: vet_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
