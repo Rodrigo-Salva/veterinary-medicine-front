@@ -83,6 +83,9 @@ export const appointmentService = {
 
 export const hospitalService = {
   getCages: async (): Promise<Cage[]> => (await api.get<Cage[]>('/hospital/cages')).data,
+  createCage: async (name: string): Promise<Cage> => (await api.post<Cage>('/hospital/cages', { name })).data,
+  updateCage: async (id: string, name: string): Promise<Cage> => (await api.put<Cage>(`/hospital/cages/${id}`, { name })).data,
+  deleteCage: async (id: string): Promise<void> => { await api.delete(`/hospital/cages/${id}`); },
   checkIn: async (data: HospitalizationCreate): Promise<Hospitalization> =>
     (await api.post<Hospitalization>('/hospital/check-in', data)).data,
   recordVitals: async (data: VitalSignCreate): Promise<VitalSign> =>
@@ -136,12 +139,14 @@ export const attachmentService = {
     petId: string,
     file: File,
     description?: string,
+    category?: string,
     medicalRecordId?: string,
   ): Promise<Attachment> => {
     const formData = new FormData();
     formData.append('pet_id', petId);
     formData.append('file', file);
     if (description) formData.append('description', description);
+    if (category) formData.append('category', category);
     if (medicalRecordId) formData.append('medical_record_id', medicalRecordId);
     return (
       await api.post<Attachment>('/attachments/upload', formData, {
