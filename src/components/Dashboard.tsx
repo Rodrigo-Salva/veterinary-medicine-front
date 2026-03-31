@@ -8,6 +8,10 @@ import { statsService } from '../services/api'
 import VaccineReminders from './VaccineReminders'
 import PetList from './PetList'
 import HeaderActions from './HeaderActions'
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, PieChart, Pie, Cell, Legend
+} from 'recharts'
 
 // ── Utilidades de fecha/hora en español ──────────────────────────────────────
 const getSaludo = () => {
@@ -71,13 +75,21 @@ const KpiCard: React.FC<KpiProps> = ({ label, value, sub, dark, prefix, icon, ac
 const Dashboard: React.FC = () => {
   const { user } = useAuth()
   const [stats, setStats]     = useState<any>(null)
+  const [monthly, setMonthly] = useState<any[]>([])
+  const [species, setSpecies] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    statsService.getStats()
-      .then(setStats)
-      .catch(() => {})
-      .finally(() => setLoading(false))
+    Promise.all([
+      statsService.getStats(),
+      statsService.getMonthly(),
+      statsService.getSpecies()
+    ]).then(([s, m, sp]) => {
+      setStats(s)
+      setMonthly(m)
+      setSpecies(sp)
+    }).catch(() => {})
+    .finally(() => setLoading(false))
   }, [])
 
   if (loading) return (
@@ -133,6 +145,75 @@ const Dashboard: React.FC = () => {
           prefix="$"
           sub="Facturación acumulada"
         />
+      </div>
+
+      {/* ── Gráficos de Negocio (BI) ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '20px', marginBottom: '20px' }}>
+        
+        {/* Gráfico de Ingresos y Citas */}
+        <div style={{ background: 'white', borderRadius: '24px', padding: '24px', boxShadow: 'var(--shadow)', border: '1.5px solid rgba(13,43,43,0.05)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1e293b', margin: 0 }}>Rendimiento Mensual</h3>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <span style={{ fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ width: '8px', height: '8px', background: 'var(--primary)', borderRadius: '2px' }} /> Ingresos
+              </span>
+              <span style={{ fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ width: '8px', height: '8px', background: '#94a3b8', borderRadius: '2px' }} /> Citas
+              </span>
+            </div>
+          </div>
+          <div style={{ height: '300px', width: '100%' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={monthly}>
+                <defs>
+                  <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#94a3b8'}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#94a3b8'}} />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontSize: '13px' }}
+                  itemStyle={{ fontWeight: 700 }}
+                />
+                <Area type="monotone" dataKey="revenue" stroke="var(--primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Gráfico de Distribución de Especies */}
+        <div style={{ background: '#0d2b2b', borderRadius: '24px', padding: '24px', boxShadow: 'var(--shadow)', color: 'white' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 24px' }}>Distribución de Pacientes</h3>
+          <div style={{ height: '240px', width: '100%' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={species}
+                  cx="50%" cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="count"
+                  nameKey="species"
+                >
+                  {species.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={['#22c55e', '#16a34a', '#15803d', '#14532d'][index % 4]} stroke="none" />
+                  ))}
+                </Pie>
+                <Tooltip 
+                   contentStyle={{ background: '#1e293b', border: 'none', borderRadius: '8px', color: 'white' }}
+                   itemStyle={{ color: 'white' }}
+                />
+                <Legend iconType="circle" />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <p style={{ fontSize: '12px', opacity: 0.6, textAlign: 'center', marginTop: '16px' }}>Total de especies activas en el sistema</p>
+        </div>
       </div>
 
       {/* ── Dos columnas: Próximas Vacunas + Actividad Reciente ── */}

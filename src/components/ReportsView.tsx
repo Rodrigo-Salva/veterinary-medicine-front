@@ -5,6 +5,7 @@ import {
 } from 'recharts'
 import { statsService } from '../services/api'
 import { TrendingUp, Users, Calendar, DollarSign, Dog, Trophy, User as UserIcon } from 'lucide-react'
+import HeaderActions from './HeaderActions'
 
 const PIE_COLORS = ['#6366f1','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#ec4899']
 const AVATAR_COLORS = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6']
@@ -48,6 +49,7 @@ const ReportsView: React.FC = () => {
           <h2 style={{ fontSize: '24px', fontWeight: 700 }}>Reportes & Estadísticas</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Métricas y tendencias del sistema</p>
         </div>
+        <HeaderActions />
       </div>
 
       {/* KPI cards */}
