@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react'
 import {
   ArrowLeft, Camera, Weight, Syringe, AlertTriangle, Heart, Edit2, Save,
-  Dog, Cat, Bird, Loader2, Plus, X,
+  Dog, Cat, Bird, Loader2, Plus, X, FileSignature, Download, Trash2, FileText, CheckCircle2
 } from 'lucide-react'
-import { petService, ownerService, medicalService } from '../services/api'
-import type { Pet, Owner, MedicalRecord, WeightRecord } from '../types'
+import { petService, ownerService, medicalService, attachmentService } from '../services/api'
+import type { Pet, Owner, MedicalRecord, WeightRecord, Attachment } from '../types'
 import Modal from './Modal'
+import ConsentModal from './ConsentModal'
 
 const API_URL = import.meta.env.VITE_API_URL as string
 
@@ -71,12 +72,15 @@ const PetProfile: React.FC<PetProfileProps> = ({ petId, onBack, onUpdated }) => 
   const [pet, setPet] = useState<Pet | null>(null)
   const [owner, setOwner] = useState<Owner | null>(null)
   const [records, setRecords] = useState<MedicalRecord[]>([])
+  const [attachments, setAttachments] = useState<Attachment[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [editForm, setEditForm] = useState<any>({})
   const [saving, setSaving] = useState(false)
   const [weightModal, setWeightModal] = useState(false)
   const [weightForm, setWeightForm] = useState({ weight: '', recorded_date: new Date().toISOString().split('T')[0], notes: '' })
+  const [activeTab, setActiveTab] = useState<'info' | 'history' | 'consents'>('info')
+  const [consentModal, setConsentModal] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const load = async () => {
@@ -89,12 +93,14 @@ const PetProfile: React.FC<PetProfileProps> = ({ petId, onBack, onUpdated }) => 
         is_neutered: p.is_neutered, microchip: p.microchip || '',
         birth_date: p.birth_date?.split('T')[0] || '', notes: p.notes || '',
       })
-      const [o, m] = await Promise.all([
+      const [o, m, a] = await Promise.all([
         ownerService.getById(p.owner_id),
         medicalService.getHistory(p.id),
+        attachmentService.getByPet(p.id)
       ])
       setOwner(o)
       setRecords(m)
+      setAttachments(a)
     } catch (e) { console.error(e) }
     finally { setLoading(false) }
   }
@@ -136,6 +142,23 @@ const PetProfile: React.FC<PetProfileProps> = ({ petId, onBack, onUpdated }) => 
       setWeightForm({ weight: '', recorded_date: new Date().toISOString().split('T')[0], notes: '' })
       load()
     } catch { alert('Error al registrar peso') }
+  }
+
+  const handleSaveSignature = async (dataUrl: string, type: string) => {
+    if (!pet) return
+    try {
+      const blob = await (await fetch(dataUrl)).blob()
+      const file = new File([blob], `firma_${type.toLowerCase().replace(/ /g, '_')}.png`, { type: 'image/png' })
+      await attachmentService.upload(pet.id, file, `Firma de consentimiento: ${type}`, 'Consentment')
+      setConsentModal(false)
+      load()
+    } catch (e) { alert('Error al guardar la firma') }
+  }
+
+  const handleDeleteAttachment = async (id: string) => {
+    if (!window.confirm('¿Eliminar este consentimiento?')) return
+    await attachmentService.delete(id)
+    load()
   }
 
   if (loading || !pet) {
@@ -182,7 +205,6 @@ const PetProfile: React.FC<PetProfileProps> = ({ petId, onBack, onUpdated }) => 
       <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '20px' }}>
         {/* LEFT: Profile card */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Photo + basic info */}
           <div style={{ background: 'white', borderRadius: '16px', padding: '24px', boxShadow: 'var(--shadow)', textAlign: 'center' }}>
             <div
               onClick={() => fileRef.current?.click()}
@@ -228,7 +250,6 @@ const PetProfile: React.FC<PetProfileProps> = ({ petId, onBack, onUpdated }) => 
             </div>
           </div>
 
-          {/* Details card */}
           <div style={{ background: 'white', borderRadius: '16px', padding: '20px', boxShadow: 'var(--shadow)' }}>
             <h4 style={{ margin: '0 0 14px', fontSize: '14px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               Informacion
@@ -298,94 +319,159 @@ const PetProfile: React.FC<PetProfileProps> = ({ petId, onBack, onUpdated }) => 
 
         {/* RIGHT: Tabs content */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Allergies banner */}
-          {allergiesList.length > 0 && (
-            <div style={{
-              background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px',
-              padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '12px',
-            }}>
-              <AlertTriangle size={20} color="#dc2626" />
-              <div>
-                <div style={{ fontWeight: 600, fontSize: '14px', color: '#dc2626' }}>Alergias registradas</div>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
-                  {allergiesList.map((a, i) => (
-                    <span key={i} style={{
-                      padding: '2px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: 600,
-                      background: '#fee2e2', color: '#dc2626',
-                    }}>{a}</span>
-                  ))}
+          <div style={{ background: 'white', borderRadius: '16px', padding: '6px', display: 'flex', gap: '4px', boxShadow: 'var(--shadow)', border: '1px solid #f1f5f9' }}>
+            {['info', 'history', 'consents'].map((t) => (
+              <button
+                key={t}
+                onClick={() => setActiveTab(t as any)}
+                style={{
+                  flex: 1, padding: '10px', borderRadius: '12px', border: 'none',
+                  background: activeTab === t ? 'var(--primary)' : 'transparent',
+                  color: activeTab === t ? 'white' : '#64748b',
+                  fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', textTransform: 'capitalize'
+                }}
+              >
+                {t === 'info' ? 'Info General' : t === 'history' ? 'Historial' : 'Consentimientos'}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === 'info' && (
+            <>
+              {allergiesList.length > 0 && (
+                <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <AlertTriangle size={20} color="#dc2626" />
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '14px', color: '#dc2626' }}>Alergias registradas</div>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
+                      {allergiesList.map((a, i) => (
+                        <span key={i} style={{ padding: '2px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: 600, background: '#fee2e2', color: '#dc2626' }}>{a}</span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
+              )}
+              <div style={{ background: 'white', borderRadius: '16px', padding: '20px', boxShadow: 'var(--shadow)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Weight size={18} color="var(--primary)" />
+                    <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 600 }}>Historial de Peso</h4>
+                  </div>
+                  <button onClick={() => setWeightModal(true)} className="btn" style={{ background: 'var(--primary)', color: 'white', padding: '6px 12px', fontSize: '12px' }}>
+                    <Plus size={14} /> Registrar
+                  </button>
+                </div>
+                <WeightChart records={pet.weight_history || []} />
+              </div>
+              <div style={{ background: 'white', borderRadius: '16px', padding: '20px', boxShadow: 'var(--shadow)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                  <Syringe size={18} color="var(--primary)" />
+                  <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 600 }}>Ultimas Consultas</h4>
+                </div>
+                {records.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {records.slice(0, 5).map(r => (
+                      <div key={r.id} style={{ padding: '12px 14px', background: '#f8fafc', borderRadius: '10px', borderLeft: '3px solid var(--primary)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: 600, fontSize: '13px', color: '#334155' }}>{r.diagnosis}</span>
+                          <span style={{ padding: '2px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 600, background: '#e0f2fe', color: '#0369a1' }}>{r.record_type}</span>
+                        </div>
+                        <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#64748b' }}>{r.treatment}</p>
+                        <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#94a3b8' }}>{new Date(r.recording_date).toLocaleDateString('es')}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '1rem' }}>No hay consultas registradas</p>
+                )}
+              </div>
+            </>
+          )}
+
+          {activeTab === 'history' && (
+            <div style={{ background: 'white', borderRadius: '24px', padding: '24px', boxShadow: 'var(--shadow)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                <FileText size={20} color="var(--primary)" />
+                <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>Historial Clínico Completo</h4>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {records.map(r => (
+                  <div key={r.id} style={{ padding: '16px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>{new Date(r.recording_date).toLocaleDateString('es')}</span>
+                      <span style={{ fontSize: '11px', background: 'var(--primary)', color: 'white', padding: '2px 10px', borderRadius: '20px', fontWeight: 700 }}>{r.record_type}</span>
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '4px' }}>{r.diagnosis}</div>
+                    <div style={{ fontSize: '13px', color: '#475569' }}>{r.description}</div>
+                  </div>
+                ))}
+                {records.length === 0 && <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>Sin registros</p>}
               </div>
             </div>
           )}
 
-          {/* Weight card */}
-          <div style={{ background: 'white', borderRadius: '16px', padding: '20px', boxShadow: 'var(--shadow)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Weight size={18} color="var(--primary)" />
-                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 600 }}>Historial de Peso</h4>
-              </div>
-              <button onClick={() => setWeightModal(true)} className="btn" style={{ background: 'var(--primary)', color: 'white', padding: '6px 12px', fontSize: '12px' }}>
-                <Plus size={14} /> Registrar
-              </button>
-            </div>
-            <WeightChart records={pet.weight_history || []} />
-          </div>
-
-          {/* Recent medical records */}
-          <div style={{ background: 'white', borderRadius: '16px', padding: '20px', boxShadow: 'var(--shadow)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-              <Syringe size={18} color="var(--primary)" />
-              <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 600 }}>Ultimas Consultas</h4>
-            </div>
-            {records.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {records.slice(0, 5).map(r => (
-                  <div key={r.id} style={{
-                    padding: '12px 14px', background: '#f8fafc', borderRadius: '10px',
-                    borderLeft: '3px solid var(--primary)',
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: 600, fontSize: '13px', color: '#334155' }}>{r.diagnosis}</span>
-                      <span style={{
-                        padding: '2px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 600,
-                        background: '#e0f2fe', color: '#0369a1',
-                      }}>{r.record_type}</span>
-                    </div>
-                    <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#64748b' }}>{r.treatment}</p>
-                    <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#94a3b8' }}>
-                      {new Date(r.recording_date).toLocaleDateString('es')}
-                    </p>
+          {activeTab === 'consents' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ background: 'white', borderRadius: '24px', padding: '24px', boxShadow: 'var(--shadow)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <FileSignature size={20} color="var(--primary)" />
+                    <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>Consentimientos Digitales</h4>
                   </div>
-                ))}
+                  <button onClick={() => setConsentModal(true)} className="btn-premium" style={{ height: '36px', padding: '0 16px', fontSize: '13px' }}>
+                    <Plus size={16} /> Nuevo Formulario
+                  </button>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  {attachments.filter(a => a.category === 'Consentment').map(a => (
+                    <div key={a.id} style={{ padding: '16px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #f1f5f9', display: 'flex', gap: '14px', alignItems: 'center' }}>
+                      <div style={{ width: '48px', height: '48px', background: '#f0fdf4', color: '#22c55e', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <CheckCircle2 size={24} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: '14px', color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.description?.replace('Firma de consentimiento: ', '')}</div>
+                        <div style={{ fontSize: '12px', color: '#94a3b8' }}>{new Date(a.upload_date).toLocaleDateString('es')}</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                         <button onClick={() => window.open(`${API_URL}/${a.file_path}`, '_blank')} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer' }}><Download size={16} /></button>
+                         <button onClick={() => handleDeleteAttachment(a.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}><Trash2 size={16} /></button>
+                      </div>
+                    </div>
+                  ))}
+                  {attachments.filter(a => a.category === 'Consentment').length === 0 && <div style={{ gridColumn: 'span 2', textAlign: 'center', padding: '32px', color: '#94a3b8', fontSize: '13px' }}>No hay consentimientos firmados aún.</div>}
+                </div>
               </div>
-            ) : (
-              <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '1rem' }}>
-                No hay consultas registradas
-              </p>
-            )}
-          </div>
+              <div style={{ background: '#0d2b2b', color: 'white', borderRadius: '24px', padding: '24px', boxShadow: 'var(--shadow)' }}>
+                <h4 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 600 }}>Información Legal</h4>
+                <p style={{ fontSize: '13px', lineHeight: '1.6', opacity: 0.8, margin: 0 }}>
+                  Los consentimientos digitales tienen validez legal como autorizaciones de procedimientos médicos. 
+                  Asegúrese de que el propietario haya leído y entendido los términos antes de proceder con el dibujo de la firma.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Weight modal */}
+      <ConsentModal 
+        isOpen={consentModal} onClose={() => setConsentModal(false)}
+        petName={pet.name} ownerName={owner ? `${owner.first_name} ${owner.last_name}` : ''}
+        onSave={handleSaveSignature}
+      />
+      
       <Modal isOpen={weightModal} onClose={() => setWeightModal(false)} title="Registrar Peso">
         <form onSubmit={handleAddWeight} className="management-form-premium">
           <div className="form-group">
             <label style={{ fontSize: '13px', fontWeight: 600, color: '#64748b', marginBottom: '8px', display: 'block' }}>Peso (kg)</label>
-            <input className="input-premium" type="number" step="0.1" required min="0.1"
-              value={weightForm.weight} onChange={e => setWeightForm({ ...weightForm, weight: e.target.value })} />
+            <input className="input-premium" type="number" step="0.1" required min="0.1" value={weightForm.weight} onChange={e => setWeightForm({ ...weightForm, weight: e.target.value })} />
           </div>
           <div className="form-group">
             <label style={{ fontSize: '13px', fontWeight: 600, color: '#64748b', marginBottom: '8px', display: 'block' }}>Fecha</label>
-            <input className="input-premium" type="date" required
-              value={weightForm.recorded_date} onChange={e => setWeightForm({ ...weightForm, recorded_date: e.target.value })} />
+            <input className="input-premium" type="date" required value={weightForm.recorded_date} onChange={e => setWeightForm({ ...weightForm, recorded_date: e.target.value })} />
           </div>
           <div className="form-group">
             <label style={{ fontSize: '13px', fontWeight: 600, color: '#64748b', marginBottom: '8px', display: 'block' }}>Notas</label>
-            <input className="input-premium" type="text" placeholder="Opcional"
-              value={weightForm.notes} onChange={e => setWeightForm({ ...weightForm, notes: e.target.value })} />
+            <input className="input-premium" type="text" placeholder="Opcional" value={weightForm.notes} onChange={e => setWeightForm({ ...weightForm, notes: e.target.value })} />
           </div>
           <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
             <button type="button" onClick={() => setWeightModal(false)} className="btn" style={{ flex: 1, background: '#f1f5f9', color: '#475569' }}>Cancelar</button>
