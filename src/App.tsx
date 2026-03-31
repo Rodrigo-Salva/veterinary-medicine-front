@@ -22,6 +22,7 @@ import BillingView from './components/BillingView'
 import SettingsView from './components/SettingsView'
 import OwnersView from './components/OwnersView'
 import NotificationCenter from './components/NotificationCenter'
+import PublicBooking from './pages/PublicBooking'
 
 
 const GlobalSearch: React.FC<{ onClose: () => void }> = ({ onClose }) => {
@@ -148,7 +149,14 @@ const AppContent: React.FC = () => {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
-  if (!isAuthenticated) return <Login />
+  if (!isAuthenticated) {
+    return (
+      <Routes>
+        <Route path="/reservar" element={<PublicBooking />} />
+        <Route path="*" element={<Login />} />
+      </Routes>
+    )
+  }
 
   return (
     <div className="app-wrapper">
@@ -181,8 +189,20 @@ const AppContent: React.FC = () => {
           {hasPermission('roles', 'listar') && (
             <NavItem to="/roles"   icon={<KeyRound size={20} />}        label="Roles"            expanded={sidebarOpen} />
           )}
+          {hasPermission('hospitalizacion', 'listar') && (
+            <NavItem to="/hospital" icon={<BedDouble size={20} />}     label="Hospital"        expanded={sidebarOpen} />
+          )}
+          {hasPermission('inventario', 'listar') && (
+            <NavItem to="/inventory" icon={<Package size={20} />}     label="Inventario"      expanded={sidebarOpen} />
+          )}
+          {hasPermission('facturacion', 'listar') && (
+            <NavItem to="/billing"  icon={<CreditCard size={20} />}     label="Facturación"     expanded={sidebarOpen} />
+          )}
+          <NavItem to="/reports"   icon={<TrendingUp size={20} />}     label="Reportes BI"     expanded={sidebarOpen} />
 
           <div className="nav-spacer" />
+
+          <NavItem to="/reservar"   icon={<FileText size={20} />}        label="Portal Público"   expanded={sidebarOpen} />
 
           <button
             title="Buscar (Ctrl+K)"
@@ -219,6 +239,7 @@ const AppContent: React.FC = () => {
             <Route path="/settings" element={<SettingsView />} />
             <Route path="/users"   element={hasPermission('usuarios', 'listar') ? <UserManagement /> : <Navigate to="/" replace />} />
             <Route path="/roles"   element={hasPermission('roles', 'listar') ? <RoleManagement /> : <Navigate to="/" replace />} />
+            <Route path="/reservar" element={<PublicBooking />} />
             <Route path="*"        element={<Navigate to="/" replace />} />
           </Routes>
         </main>
