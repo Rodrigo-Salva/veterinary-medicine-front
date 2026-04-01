@@ -6,7 +6,7 @@ import { searchService } from './services/api'
 import {
   LayoutDashboard, Dog, Calendar, FileText, Settings, LogOut,
   Search, Package, Shield, TrendingUp, CreditCard, X, ChevronRight, UsersRound, BedDouble, UserCircle2,
-  KeyRound,
+  KeyRound, Video,
 } from 'lucide-react'
 import Pets from './pages/Pets'
 import Dashboard from './components/Dashboard'
@@ -23,6 +23,7 @@ import SettingsView from './components/SettingsView'
 import OwnersView from './components/OwnersView'
 import NotificationCenter from './components/NotificationCenter'
 import PublicBooking from './pages/PublicBooking'
+import TelemedicineView from './components/TelemedicineView'
 
 
 const GlobalSearch: React.FC<{ onClose: () => void }> = ({ onClose }) => {
@@ -186,19 +187,22 @@ const AppContent: React.FC = () => {
           {hasPermission('usuarios', 'listar') && (
             <NavItem to="/users"   icon={<Shield size={20} />}          label="Usuarios"         expanded={sidebarOpen} />
           )}
-          {hasPermission('roles', 'listar') && (
+          {/* {hasPermission('roles', 'listar') && (
             <NavItem to="/roles"   icon={<KeyRound size={20} />}        label="Roles"            expanded={sidebarOpen} />
-          )}
+          )} */}
           {hasPermission('hospitalizacion', 'listar') && (
             <NavItem to="/hospital" icon={<BedDouble size={20} />}     label="Hospital"        expanded={sidebarOpen} />
+          )}
+          {(hasPermission('telemedicina', 'listar') || user?.role_name === 'Admin') && (
+            <NavItem to="/telemedicine" icon={<Video size={20} />}     label="Telemedicina"    expanded={sidebarOpen} />
           )}
           {hasPermission('inventario', 'listar') && (
             <NavItem to="/inventory" icon={<Package size={20} />}     label="Inventario"      expanded={sidebarOpen} />
           )}
-          {hasPermission('facturacion', 'listar') && (
+          {/* {hasPermission('facturacion', 'listar') && (
             <NavItem to="/billing"  icon={<CreditCard size={20} />}     label="Facturación"     expanded={sidebarOpen} />
           )}
-          <NavItem to="/reports"   icon={<TrendingUp size={20} />}     label="Reportes BI"     expanded={sidebarOpen} />
+          <NavItem to="/reports"   icon={<TrendingUp size={20} />}     label="Reportes BI"     expanded={sidebarOpen} /> */}
 
           <div className="nav-spacer" />
 
@@ -231,6 +235,7 @@ const AppContent: React.FC = () => {
             <Route path="/pets"    element={hasPermission('mascotas', 'listar') ? <Pets /> : <Navigate to="/" replace />} />
             <Route path="/owners"  element={hasPermission('propietarios', 'listar') ? <OwnersView /> : <Navigate to="/" replace />} />
             <Route path="/hospital" element={hasPermission('hospitalizacion', 'listar') ? <HospitalView /> : <Navigate to="/" replace />} />
+            <Route path="/telemedicine" element={(hasPermission('telemedicina', 'listar') || user?.role_name === 'Admin') ? <TelemedicineView /> : <Navigate to="/" replace />} />
             <Route path="/inventory" element={hasPermission('inventario', 'listar') ? <InventoryView /> : <Navigate to="/" replace />} />
             <Route path="/calendar" element={hasPermission('citas', 'listar') ? <CalendarView /> : <Navigate to="/" replace />} />
             <Route path="/history" element={hasPermission('historial_medico', 'listar') ? <MedicalHistoryView /> : <Navigate to="/" replace />} />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { ChevronLeft, ChevronRight, Plus, X, Clock, DollarSign, Calendar } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, X, Clock, DollarSign, Calendar, Video } from 'lucide-react'
 import { appointmentService, petService, ownerService } from '../services/api'
 import ConfirmDialog from './ConfirmDialog'
 
@@ -209,9 +209,20 @@ const CalendarView: React.FC = () => {
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <span style={{ fontWeight: 600, fontSize: '14px', color: '#0f172a' }}>{a.reason}</span>
-                    <button onClick={() => setConfirm({ open: true, apptId: a.id })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#cbd5e1', padding: '0 0 0 8px' }}>
-                      <X size={14} />
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      {a.reason.toLowerCase().includes('tele') && (
+                        <button 
+                          onClick={() => window.location.href = '/telemedicine'}
+                          title="Iniciar Video-consulta"
+                          style={{ background: '#f0fdf4', border: 'none', cursor: 'pointer', color: '#22c55e', padding: '4px', borderRadius: '6px' }}
+                        >
+                          <Video size={14} />
+                        </button>
+                      )}
+                      <button onClick={() => setConfirm({ open: true, apptId: a.id })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#cbd5e1', padding: '0' }}>
+                        <X size={14} />
+                      </button>
+                    </div>
                   </div>
                   <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: '#94a3b8' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
