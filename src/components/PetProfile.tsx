@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import {
   ArrowLeft, Camera, Weight, Syringe, AlertTriangle, Heart, Edit2, Save,
-  Dog, Cat, Bird, Loader2, Plus, X, FileSignature, Download, Trash2, FileText, CheckCircle2
+  Dog, Cat, Bird, Loader2, Plus, X, FileSignature, Download, Trash2, FileText, CheckCircle2, Video
 } from 'lucide-react'
 import { petService, ownerService, medicalService, attachmentService } from '../services/api'
 import type { Pet, Owner, MedicalRecord, WeightRecord, Attachment } from '../types'
@@ -179,24 +179,46 @@ const PetProfile: React.FC<PetProfileProps> = ({ petId, onBack, onUpdated }) => 
   return (
     <div className="dashboard-container">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-        <button onClick={onBack} className="btn" style={{ background: '#f1f5f9', color: '#475569', padding: '8px' }}>
-          <ArrowLeft size={18} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+        <button onClick={onBack} className="btn" style={{ background: '#f1f5f9', color: '#475569', padding: '10px', borderRadius: '12px' }}>
+          <ArrowLeft size={20} />
         </button>
-        <h2 style={{ fontSize: '22px', fontWeight: 700, margin: 0 }}>Ficha de {pet.name}</h2>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
-          {editing ? (
-            <>
-              <button onClick={() => setEditing(false)} className="btn" style={{ background: '#f1f5f9', color: '#475569' }}>
-                <X size={16} /> Cancelar
-              </button>
-              <button onClick={handleSave} className="btn" disabled={saving} style={{ background: 'var(--primary)', color: 'white' }}>
-                <Save size={16} /> {saving ? 'Guardando...' : 'Guardar'}
-              </button>
-            </>
-          ) : (
-            <button onClick={() => setEditing(true)} className="btn" style={{ background: 'var(--primary)', color: 'white' }}>
-              <Edit2 size={16} /> Editar
+        <div style={{ flex: 1 }}>
+          <h2 style={{ fontSize: '26px', fontWeight: 800, margin: 0, color: '#0f172a' }}>Ficha de {pet.name}</h2>
+          <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>Paciente ID: {pet.id.substring(0, 8)}...</p>
+        </div>
+        
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <button 
+            className="btn" 
+            onClick={() => window.location.href = '/telemedicine'}
+            style={{ background: '#f0fdf4', color: '#166534', border: '1.5px solid #86efac', fontWeight: 700, borderRadius: '14px' }}
+          >
+            <Video size={18} /> Videoconsulta
+          </button>
+          
+          <button 
+            className="btn" 
+            onClick={() => setEditing(!editing)}
+            style={{ 
+              background: editing ? '#fef2f2' : 'var(--primary)', 
+              color: editing ? '#dc2626' : 'white',
+              borderRadius: '14px',
+              fontWeight: 700
+            }}
+          >
+            {editing ? <X size={18} /> : <Edit2 size={18} />}
+            {editing ? 'Cancelar' : 'Editar Ficha'}
+          </button>
+          
+          {editing && (
+            <button 
+              className="btn" 
+              onClick={handleSave} 
+              disabled={saving}
+              style={{ background: 'var(--primary)', color: 'white', borderRadius: '14px', fontWeight: 700 }}
+            >
+              <Save size={18} /> {saving ? 'Guardando...' : 'Guardar Cambios'}
             </button>
           )}
         </div>

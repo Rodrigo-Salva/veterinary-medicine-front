@@ -179,15 +179,30 @@ export const authService = {
   getMe: async () => (await api.get('/users/me')).data,
 };
 
-export const roleService = {
-  getAll: async (): Promise<Role[]> => (await api.get<Role[]>('/roles/')).data,
-  getById: async (id: string): Promise<Role> => (await api.get<Role>(`/roles/${id}`)).data,
-  create: async (data: RoleCreate): Promise<Role> => (await api.post<Role>('/roles/', data)).data,
-  update: async (id: string, data: RoleCreate): Promise<Role> => (await api.put<Role>(`/roles/${id}`, data)).data,
-  delete: async (id: string): Promise<void> => { await api.delete(`/roles/${id}`); },
-  getAllPermissions: async (): Promise<Permission[]> => (await api.get<Permission[]>('/roles/permissions')).data,
-  setPermissions: async (roleId: string, permissionIds: string[]): Promise<Role> =>
-    (await api.put<Role>(`/roles/${roleId}/permissions`, { permission_ids: permissionIds })).data,
+export const telemedicineService = {
+  createSession: async (data: { appointment_id: string; pet_id: string }) =>
+    (await api.post('/telemedicine/sessions', data)).data,
+  getActiveSessions: async () => (await api.get('/telemedicine/sessions')).data,
+  getSession: async (id: string) => (await api.get(`/telemedicine/sessions/${id}`)).data,
+  endSession: async (id: string) => (await api.post(`/telemedicine/sessions/${id}/end`)).data,
+};
+
+export const hospitalService = {
+  getCages: async () => (await api.get('/hospital/cages')).data,
+  createCage: async (name: string) => (await api.post('/hospital/cages', { name })).data,
+  updateCage: async (id: string, name: string) => (await api.put(`/hospital/cages/${id}`, { name })).data,
+  deleteCage: async (id: string) => (await api.delete(`/hospital/cages/${id}`)).data,
+  checkIn: async (data: { pet_id: string; cage_id: string; reason: string }) =>
+    (await api.post('/hospital/check-in', data)).data,
+  discharge: async (hospitalization_id: string) =>
+    (await api.post(`/hospital/discharge/${hospitalization_id}`)).data,
+  recordVitals: async (data: {
+    hospitalization_id: string;
+    temperature: number;
+    heart_rate: number;
+    respiratory_rate: number;
+    notes: string;
+  }) => (await api.post('/hospital/vitals', data)).data,
 };
 
 export default api;
