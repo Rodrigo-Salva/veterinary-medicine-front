@@ -29,6 +29,7 @@ const MedicalHistoryView: React.FC = () => {
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileDescription, setFileDescription] = useState('');
+  const [fileCategory, setFileCategory] = useState('General');
   const [confirmDeleteAttachment, setConfirmDeleteAttachment] = useState<string | null>(null);
 
   useEffect(() => {
@@ -99,10 +100,11 @@ const MedicalHistoryView: React.FC = () => {
     e.preventDefault();
     if (!selectedPet || !selectedFile) return;
     try {
-      await attachmentService.upload(selectedPet.id, selectedFile, fileDescription);
+      await attachmentService.upload(selectedPet.id, selectedFile, fileDescription, fileCategory);
       setIsAttachmentModalOpen(false);
       setSelectedFile(null);
       setFileDescription('');
+      setFileCategory('General');
       selectPet(selectedPet);
     } catch (err) {
       alert("Error al subir archivo");
@@ -352,25 +354,62 @@ const MedicalHistoryView: React.FC = () => {
             )}
 
             {activeTab === 'attachments' && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '24px' }}>
-                {attachments.map(a => (
-                  <div key={a.id} style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                    {a.file_type === 'Image' ? (
-                      <img src={`http://localhost:8000/${a.file_path}`} alt={a.description} style={{ width: '100%', height: '150px', objectFit: 'cover' }} />
-                    ) : (
-                      <div style={{ height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9' }}>
-                        <FileText size={48} color="#94a3b8" />
-                      </div>
-                    )}
-                    <div style={{ padding: '12px' }}>
-                      <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '4px' }}>{a.description || 'Sin descripción'}</div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '11px', color: '#94a3b8' }}>{new Date(a.upload_date).toLocaleDateString()}</span>
-                        <Trash2 size={14} color="#ef4444" style={{ cursor: 'pointer' }} onClick={() => deleteAttachment(a.id)} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                {['General', 'Laboratory', 'X-Ray', 'Ultrasound'].map(cat => {
+                  const catFiles = attachments.filter(a => a.category === cat || (!a.category && cat === 'General'));
+                  if (catFiles.length === 0) return null;
+
+                  return (
+                    <div key={cat}>
+                      <h4 style={{ fontSize: '14px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', marginBottom: '16px', letterSpacing: '0.05em' }}>
+                        {cat === 'General' ? 'Documentos Generales' : 
+                         cat === 'Laboratory' ? 'Laboratorio' :
+                         cat === 'X-Ray' ? 'Radiografías' : 'Ecografías'}
+                      </h4>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '20px' }}>
+                        {catFiles.map(a => (
+                          <div key={a.id} className="floating-card" style={{ background: 'white', borderRadius: '16px', overflow: 'hidden', border: '1px solid #e2e8f0', transition: 'transform 0.2s' }}>
+                            <div style={{ height: '160px', overflow: 'hidden', background: '#f8fafc', position: 'relative' }}>
+                              {a.file_type === 'Image' ? (
+                                <img 
+                                  src={`http://localhost:8000/${a.file_path}`} 
+                                  alt={a.description} 
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
+                                  onClick={() => window.open(`http://localhost:8000/${a.file_path}`, '_blank')}
+                                />
+                              ) : (
+                                <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
+                                  <FileText size={48} />
+                                  <span style={{ fontSize: '11px', fontWeight: '700', marginTop: '8px' }}>PDF</span>
+                                </div>
+                              )}
+                            </div>
+                            <div style={{ padding: '16px' }}>
+                              <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {a.description || 'Sin descripción'}
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '12px', color: '#94a3b8' }}>{new Date(a.upload_date).toLocaleDateString()}</span>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                  <button 
+                                    onClick={() => window.open(`http://localhost:8000/${a.file_path}`, '_blank')}
+                                    style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}
+                                  >Ver</button>
+                                  <Trash2 size={14} color="#ef4444" style={{ cursor: 'pointer' }} onClick={() => deleteAttachment(a.id)} />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
+                  );
+                })}
+                {attachments.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '48px', color: '#94a3b8' }}>
+                    No hay archivos adjuntos para este paciente.
                   </div>
-                ))}
+                )}
               </div>
             )}
           </>
@@ -493,6 +532,20 @@ const MedicalHistoryView: React.FC = () => {
               required
             />
           </div>
+          <div className="form-group" style={{ marginBottom: '16px' }}>
+            <label style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px', display: 'block' }}>Categoría de Estudio</label>
+            <select
+              className="input-premium"
+              value={fileCategory}
+              onChange={e => setFileCategory(e.target.value)}
+              required
+            >
+              <option value="General">Documento General</option>
+              <option value="Laboratory">Laboratorio / Análisis</option>
+              <option value="X-Ray">Radiografía (Rayos X)</option>
+              <option value="Ultrasound">Ecografía / Ultrasonido</option>
+            </select>
+          </div>
           <div className="form-group">
             <label style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px', display: 'block' }}>Seleccionar archivo</label>
             <input
@@ -512,6 +565,7 @@ const MedicalHistoryView: React.FC = () => {
 
       {confirmDeleteAttachment && (
         <ConfirmDialog
+          isOpen={true}
           title="Eliminar archivo"
           message="¿Estás seguro de que deseas eliminar este archivo? Esta acción no se puede deshacer."
           confirmLabel="Eliminar"

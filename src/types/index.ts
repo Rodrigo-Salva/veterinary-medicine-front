@@ -204,6 +204,7 @@ export interface Attachment {
   file_path: string;
   file_type: 'Image' | 'PDF' | 'Other';
   description?: string;
+  category: string;
   upload_date: string;
 }
 
