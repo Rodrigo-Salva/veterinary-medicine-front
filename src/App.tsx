@@ -1,12 +1,14 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, NavLink, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { NotificationProvider, useNotify, useNotificationData } from './context/NotificationContext'
+import { ToastContainer } from './components/ToastContainer'
 import Login from './components/Login'
 import { searchService } from './services/api'
 import {
   LayoutDashboard, Dog, Calendar, FileText, Settings, LogOut,
   Search, Package, Shield, TrendingUp, CreditCard, X, ChevronRight, UsersRound, BedDouble, UserCircle2,
-  KeyRound, Video,
+  KeyRound, Video, Beaker,
 } from 'lucide-react'
 import Pets from './pages/Pets'
 import Dashboard from './components/Dashboard'
@@ -20,6 +22,7 @@ import CalendarView from './components/CalendarView'
 import ReportsView from './components/ReportsView'
 import BillingView from './components/BillingView'
 import SettingsView from './components/SettingsView'
+import LaboratoryView from './components/LaboratoryView'
 import OwnersView from './components/OwnersView'
 import NotificationCenter from './components/NotificationCenter'
 import PublicBooking from './pages/PublicBooking'
@@ -139,6 +142,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon, label, expanded }) => (
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, logout, user, hasPermission } = useAuth()
+  const { notifications, remove } = useNotificationData()
   const [showSearch, setShowSearch] = useState(false)
   const sidebarOpen = true
 
@@ -161,6 +165,7 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="app-wrapper">
+      <ToastContainer notifications={notifications} onRemove={remove} />
       {showSearch && <GlobalSearch onClose={() => setShowSearch(false)} />}
 
       <aside className={`sidebar-slim${sidebarOpen ? ' expanded' : ''}`}>
@@ -187,14 +192,17 @@ const AppContent: React.FC = () => {
           {hasPermission('usuarios', 'listar') && (
             <NavItem to="/users"   icon={<Shield size={20} />}          label="Usuarios"         expanded={sidebarOpen} />
           )}
-          {/* {hasPermission('roles', 'listar') && (
+          {hasPermission('roles', 'listar') && (
             <NavItem to="/roles"   icon={<KeyRound size={20} />}        label="Roles"            expanded={sidebarOpen} />
-          )} */}
+          )}
           {hasPermission('hospitalizacion', 'listar') && (
             <NavItem to="/hospital" icon={<BedDouble size={20} />}     label="Hospital"        expanded={sidebarOpen} />
           )}
           {(hasPermission('telemedicina', 'listar') || user?.role_name === 'Admin') && (
             <NavItem to="/telemedicine" icon={<Video size={20} />}     label="Telemedicina"    expanded={sidebarOpen} />
+          )}
+          {hasPermission('historial_medico', 'listar') && (
+            <NavItem to="/laboratory" icon={<Beaker size={20} />}    label="Laboratorio"     expanded={sidebarOpen} />
           )}
           {hasPermission('inventario', 'listar') && (
             <NavItem to="/inventory" icon={<Package size={20} />}     label="Inventario"      expanded={sidebarOpen} />
@@ -241,6 +249,7 @@ const AppContent: React.FC = () => {
             <Route path="/history" element={hasPermission('historial_medico', 'listar') ? <MedicalHistoryView /> : <Navigate to="/" replace />} />
             <Route path="/reports" element={<ReportsView />} />
             <Route path="/billing" element={hasPermission('facturacion', 'listar') ? <BillingView /> : <Navigate to="/" replace />} />
+            <Route path="/laboratory" element={hasPermission('historial_medico', 'listar') ? <LaboratoryView /> : <Navigate to="/" replace />} />
             <Route path="/settings" element={<SettingsView />} />
             <Route path="/users"   element={hasPermission('usuarios', 'listar') ? <UserManagement /> : <Navigate to="/" replace />} />
             <Route path="/roles"   element={hasPermission('roles', 'listar') ? <RoleManagement /> : <Navigate to="/" replace />} />
@@ -257,9 +266,11 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => (
   <AuthProvider>
-    <Router>
-      <AppContent />
-    </Router>
+    <NotificationProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </NotificationProvider>
   </AuthProvider>
 )
 

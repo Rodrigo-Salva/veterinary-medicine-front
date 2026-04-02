@@ -265,6 +265,26 @@ export interface HospitalizationCreate {
   reason: string;
 }
 
+// ─── Laboratory ─────────────────────────────────────────────────────────────
+
+export interface LaboratoryResult {
+  id: string;
+  pet_id: string;
+  test_name: string;
+  category: string;
+  result_date: string;
+  notes?: string;
+  parameters?: string; // JSON string
+}
+
+export interface LaboratoryResultCreate {
+  pet_id: string;
+  test_name: string;
+  category: string;
+  notes?: string;
+  parameters?: string;
+}
+
 // ─── Billing ──────────────────────────────────────────────────────────────────
 
 export interface InvoiceItem {

@@ -13,6 +13,7 @@ import type {
   AuthResponse,
   Role, RoleCreate, Permission,
   WeightRecord, Notification,
+  LaboratoryResult, LaboratoryResultCreate,
 } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL as string;
@@ -187,22 +188,22 @@ export const telemedicineService = {
   endSession: async (id: string) => (await api.post(`/telemedicine/sessions/${id}/end`)).data,
 };
 
-export const hospitalService = {
-  getCages: async () => (await api.get('/hospital/cages')).data,
-  createCage: async (name: string) => (await api.post('/hospital/cages', { name })).data,
-  updateCage: async (id: string, name: string) => (await api.put(`/hospital/cages/${id}`, { name })).data,
-  deleteCage: async (id: string) => (await api.delete(`/hospital/cages/${id}`)).data,
-  checkIn: async (data: { pet_id: string; cage_id: string; reason: string }) =>
-    (await api.post('/hospital/check-in', data)).data,
-  discharge: async (hospitalization_id: string) =>
-    (await api.post(`/hospital/discharge/${hospitalization_id}`)).data,
-  recordVitals: async (data: {
-    hospitalization_id: string;
-    temperature: number;
-    heart_rate: number;
-    respiratory_rate: number;
-    notes: string;
-  }) => (await api.post('/hospital/vitals', data)).data,
+export const laboratoryService = {
+  getByPet: async (petId: string): Promise<LaboratoryResult[]> =>
+    (await api.get<LaboratoryResult[]>(`/laboratory/pet/${petId}`)).data,
+  create: async (data: LaboratoryResultCreate): Promise<LaboratoryResult> =>
+    (await api.post<LaboratoryResult>('/laboratory/', data)).data,
+  delete: async (id: string): Promise<void> => { await api.delete(`/laboratory/${id}`); },
+};
+
+export const roleService = {
+  getAll: async (): Promise<Role[]> => (await api.get<Role[]>('/roles/')).data,
+  getAllPermissions: async (): Promise<Permission[]> => (await api.get<Permission[]>('/roles/permissions')).data,
+  create: async (data: RoleCreate): Promise<Role> => (await api.post<Role>('/roles/', data)).data,
+  update: async (id: string, data: RoleCreate): Promise<Role> => (await api.put<Role>(`/roles/${id}`, data)).data,
+  delete: async (id: string): Promise<void> => { await api.delete(`/roles/${id}`); },
+  setPermissions: async (roleId: string, permissionIds: string[]): Promise<Role> =>
+    (await api.put<Role>(`/roles/${roleId}/permissions`, { permission_ids: permissionIds })).data,
 };
 
 export default api;
