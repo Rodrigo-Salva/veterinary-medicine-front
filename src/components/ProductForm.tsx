@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Product, ProductCreate } from '../types'
 import { inventoryService } from '../services/api'
+import { useNotify } from '../context/NotificationContext'
 
 interface ProductFormProps {
   onSuccess: () => void
@@ -9,6 +10,7 @@ interface ProductFormProps {
 }
 
 const ProductForm: React.FC<ProductFormProps> = ({ onSuccess, onCancel, initialData }) => {
+  const notify = useNotify();
   const [formData, setFormData] = useState<ProductCreate>({
     name: initialData?.name || '',
     description: initialData?.description || '',
@@ -30,7 +32,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ onSuccess, onCancel, initialD
       }
       onSuccess();
     } catch (error) {
-      console.error('Error saving product:', error);
+      notify.error('Error al guardar el producto');
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ownerService } from '../services/api';
 import { OwnerCreate } from '../types';
+import { useNotify } from '../context/NotificationContext';
 
 interface OwnerFormProps {
   onSuccess: () => void;
@@ -8,6 +9,7 @@ interface OwnerFormProps {
 }
 
 const OwnerForm: React.FC<OwnerFormProps> = ({ onSuccess, onCancel }) => {
+  const notify = useNotify();
   const [formData, setFormData] = useState<OwnerCreate>({
     first_name: '',
     last_name: '',
@@ -21,10 +23,10 @@ const OwnerForm: React.FC<OwnerFormProps> = ({ onSuccess, onCancel }) => {
     setLoading(true);
     try {
       await ownerService.create(formData);
+      notify.success('Propietario registrado con éxito');
       onSuccess();
     } catch (error) {
-      console.error('Error creating owner:', error);
-      alert('Error creating owner. Please check the console.');
+      notify.error('Error al registrar el propietario');
     } finally {
       setLoading(false);
     }
