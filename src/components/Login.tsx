@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/api';
 import { AlertCircle, PawPrint } from 'lucide-react';
+import { useNotify } from '../context/NotificationContext';
 
 const Login: React.FC = () => {
+  const notify = useNotify();
   const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -18,7 +20,9 @@ const Login: React.FC = () => {
       const response = await authService.login({ username, password });
       login(response);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Error al iniciar sesión. Verifica tus credenciales.');
+      const msg = err.response?.data?.detail || 'Error al iniciar sesión. Verifica tus credenciales.';
+      setError(msg);
+      notify.error(msg);
     } finally {
       setLoading(false);
     }

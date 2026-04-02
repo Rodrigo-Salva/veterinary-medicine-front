@@ -4,6 +4,7 @@ import { roleService } from '../services/api'
 import type { Role, Permission } from '../types'
 import Modal from './Modal'
 import ConfirmDialog from './ConfirmDialog'
+import { useNotify } from '../context/NotificationContext'
 
 const MODULE_LABELS: Record<string, string> = {
   dashboard: 'Dashboard',
@@ -17,6 +18,8 @@ const MODULE_LABELS: Record<string, string> = {
   reportes: 'Reportes',
   usuarios: 'Usuarios',
   roles: 'Roles',
+  laboratorio: 'Laboratorio',
+  telemedicina: 'Telemedicina',
 }
 
 const ACTION_LABELS: Record<string, string> = {
@@ -27,6 +30,7 @@ const ACTION_LABELS: Record<string, string> = {
 }
 
 const RoleManagement: React.FC = () => {
+  const notify = useNotify()
   const [roles, setRoles] = useState<Role[]>([])
   const [allPermissions, setAllPermissions] = useState<Permission[]>([])
   const [loading, setLoading] = useState(true)
@@ -49,7 +53,9 @@ const RoleManagement: React.FC = () => {
         const updated = r.find(role => role.id === selectedRole.id)
         if (updated) selectRole(updated)
       }
-    } catch { console.error('Error loading roles') }
+    } catch { 
+      notify.error('Error al cargar roles y permisos')
+    }
     finally { setLoading(false) }
   }
 
@@ -87,8 +93,11 @@ const RoleManagement: React.FC = () => {
     setSaving(true)
     try {
       await roleService.setPermissions(selectedRole.id, Array.from(activePerms))
+      notify.success('Permisos actualizados correctamente')
       await load()
-    } catch { alert('Error al guardar permisos') }
+    } catch { 
+      notify.error('Error al guardar los permisos')
+    }
     finally { setSaving(false) }
   }
 
@@ -110,12 +119,16 @@ const RoleManagement: React.FC = () => {
     try {
       if (editRole) {
         await roleService.update(editRole.id, form)
+        notify.success('Rol actualizado con éxito')
       } else {
         await roleService.create(form)
+        notify.success('Rol creado correctamente')
       }
       setModalOpen(false)
       await load()
-    } catch { alert('Error al guardar rol') }
+    } catch { 
+      notify.error('Error al guardar el rol')
+    }
     finally { setSaving(false) }
   }
 
@@ -123,9 +136,12 @@ const RoleManagement: React.FC = () => {
     if (!confirmDelete) return
     try {
       await roleService.delete(confirmDelete.id)
+      notify.success('Rol eliminado')
       if (selectedRole?.id === confirmDelete.id) setSelectedRole(null)
       await load()
-    } catch { alert('No se puede eliminar este rol (puede tener usuarios asignados)') }
+    } catch { 
+      notify.error('No se puede eliminar este rol (puede tener usuarios asignados)')
+    }
     finally { setConfirmDelete(null) }
   }
 

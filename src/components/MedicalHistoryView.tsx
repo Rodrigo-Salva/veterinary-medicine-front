@@ -4,8 +4,10 @@ import { Search, Plus, Calendar, User, FileText, ChevronRight, FilePlus, Image a
 import Modal from './Modal';
 import ConfirmDialog from './ConfirmDialog';
 import { MedicalRecord, Prescription, Attachment } from '../types';
+import { useNotify } from '../context/NotificationContext';
 
 const MedicalHistoryView: React.FC = () => {
+  const notify = useNotify();
   const [pets, setPets] = useState<any[]>([]);
   const [selectedPet, setSelectedPet] = useState<any | null>(null);
   const [history, setHistory] = useState<MedicalRecord[]>([]);
@@ -41,7 +43,7 @@ const MedicalHistoryView: React.FC = () => {
       const data = await petService.getAll();
       setPets(data);
     } catch (err) {
-      console.error("Error fetching pets:", err);
+      notify.error('Error al cargar la lista de pacientes');
     } finally {
       setLoading(false);
     }
@@ -59,7 +61,7 @@ const MedicalHistoryView: React.FC = () => {
       setPrescriptions(prescriptionData);
       setAttachments(attachmentData);
     } catch (err) {
-      console.error("Error fetching pet details:", err);
+      notify.error('Error al cargar el historial del paciente');
     }
   };
 
@@ -72,11 +74,12 @@ const MedicalHistoryView: React.FC = () => {
         ...formData,
         next_date: formData.next_date || null
       });
+      notify.success('Registro médico guardado');
       setIsModalOpen(false);
       setFormData({ description: '', diagnosis: '', treatment: '', record_type: 'Consultation', next_date: '' });
       selectPet(selectedPet);
     } catch (err) {
-      alert("Error al guardar: " + err);
+      notify.error('Error al guardar el registro médico');
     }
   };
 
@@ -88,11 +91,12 @@ const MedicalHistoryView: React.FC = () => {
         pet_id: selectedPet.id,
         ...prescriptionData
       });
+      notify.success('Receta emitida correctamente');
       setIsPrescriptionModalOpen(false);
       setPrescriptionData({ medications: '', instructions: '' });
       selectPet(selectedPet);
     } catch (err) {
-      alert("Error al guardar receta");
+      notify.error('Error al guardar la receta');
     }
   };
 
@@ -101,13 +105,14 @@ const MedicalHistoryView: React.FC = () => {
     if (!selectedPet || !selectedFile) return;
     try {
       await attachmentService.upload(selectedPet.id, selectedFile, fileDescription, fileCategory);
+      notify.success('Archivo subido con éxito');
       setIsAttachmentModalOpen(false);
       setSelectedFile(null);
       setFileDescription('');
       setFileCategory('General');
       selectPet(selectedPet);
     } catch (err) {
-      alert("Error al subir archivo");
+      notify.error('Error al subir el archivo');
     }
   };
 
@@ -115,9 +120,14 @@ const MedicalHistoryView: React.FC = () => {
 
   const doDeleteAttachment = async () => {
     if (!confirmDeleteAttachment) return;
-    await attachmentService.delete(confirmDeleteAttachment);
-    setConfirmDeleteAttachment(null);
-    selectPet(selectedPet);
+    try {
+      await attachmentService.delete(confirmDeleteAttachment);
+      notify.success('Archivo eliminado');
+      setConfirmDeleteAttachment(null);
+      selectPet(selectedPet);
+    } catch {
+      notify.error('Error al eliminar el archivo');
+    }
   };
 
   if (loading) return <div className="p-8">Cargando Pacientes...</div>;

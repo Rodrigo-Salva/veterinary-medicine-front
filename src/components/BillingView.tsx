@@ -3,6 +3,7 @@ import { Plus, X, CheckCircle, XCircle, Clock, DollarSign, Trash2, FileText, Sea
 import { billingService, petService, ownerService } from '../services/api'
 import Modal from './Modal'
 import ConfirmDialog from './ConfirmDialog'
+import { useNotify } from '../context/NotificationContext'
 
 interface InvoiceItem { description: string; quantity: number; unit_price: number }
 interface Invoice {
@@ -18,6 +19,7 @@ const STATUS_CFG: Record<string, { bg: string; color: string; label: string; ico
 }
 
 const BillingView: React.FC = () => {
+  const notify = useNotify()
   const [invoices, setInvoices]   = useState<Invoice[]>([])
   const [filter, setFilter]       = useState('')
   const [showModal, setShowModal] = useState(false)
@@ -36,7 +38,11 @@ const BillingView: React.FC = () => {
   })
 
   const load = async () => {
-    try { setInvoices(await billingService.getAll(filter || undefined)) } catch {}
+    try { 
+      setInvoices(await billingService.getAll(filter || undefined)) 
+    } catch {
+      notify.error('Error al cargar las facturas')
+    }
   }
 
   useEffect(() => { load() }, [filter])
@@ -61,10 +67,13 @@ const BillingView: React.FC = () => {
         tax_rate: parseFloat(form.tax_rate) || 0, notes: form.notes,
         items: form.items,
       })
+      notify.success('Factura creada exitosamente')
       setShowModal(false)
       setForm({ pet_id: '', owner_id: '', tax_rate: '0', notes: '', items: [{ description: '', quantity: 1, unit_price: 0 }] })
       load()
-    } catch (err) { console.error(err) }
+    } catch (err) { 
+      notify.error('Error al crear la factura')
+    }
     finally { setLoading(false) }
   }
 
@@ -78,7 +87,13 @@ const BillingView: React.FC = () => {
         : `¿Confirmar el pago de la factura #${inv.id.slice(0, 8)} por $${inv.total.toFixed(2)}?`,
       onConfirm: async () => {
         setConfirm(c => ({ ...c, open: false }))
-        try { await billingService.updateStatus(inv.id, status); load() } catch {}
+        try { 
+          await billingService.updateStatus(inv.id, status)
+          notify.success(`Factura ${isCancel ? 'cancelada' : 'pagada'} con éxito`)
+          load() 
+        } catch {
+          notify.error('Error al actualizar el estado de la factura')
+        }
       },
     })
   }
@@ -90,7 +105,13 @@ const BillingView: React.FC = () => {
       message: `¿Eliminar permanentemente la factura #${inv.id.slice(0, 8)}? No se podrá recuperar.`,
       onConfirm: async () => {
         setConfirm(c => ({ ...c, open: false }))
-        try { await billingService.delete(inv.id); load() } catch {}
+        try { 
+          await billingService.delete(inv.id)
+          notify.success('Factura eliminada correctamente')
+          load() 
+        } catch {
+          notify.error('Error al eliminar la factura')
+        }
       },
     })
   }

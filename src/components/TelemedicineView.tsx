@@ -7,8 +7,10 @@ import {
 } from 'lucide-react';
 import { telemedicineService, medicalService, petService } from '../services/api';
 import { MedicalRecord } from '../types';
+import { useNotify } from '../context/NotificationContext';
 
 const TelemedicineView: React.FC = () => {
+  const notify = useNotify();
   const [activeSession, setActiveSession] = useState<any>(null);
   const [pets, setPets] = useState<any[]>([]);
   const [selectedPet, setSelectedPet] = useState<any | null>(null);
@@ -48,7 +50,7 @@ const TelemedicineView: React.FC = () => {
         }
       }
     } catch (err) {
-      console.error(err);
+      notify.error('Error al cargar datos de telemedicina');
     } finally {
       setLoading(false);
     }
@@ -68,11 +70,11 @@ const TelemedicineView: React.FC = () => {
         pet_id: selectedPet.id,
         ...notes
       });
-      alert('Notas guardadas correctamente');
+      notify.success('Notas clínicas de telemedicina guardadas correctamente');
       const h = await medicalService.getHistory(selectedPet.id);
       setHistory(h);
     } catch (err) {
-      alert('Error al guardar notas');
+      notify.error('Error al guardar notas de telemedicina');
     }
   };
 

@@ -6,6 +6,7 @@ import {
 import { statsService } from '../services/api'
 import { TrendingUp, Users, Calendar, DollarSign, Dog, Trophy, User as UserIcon } from 'lucide-react'
 import HeaderActions from './HeaderActions'
+import { useNotify } from '../context/NotificationContext'
 
 const PIE_COLORS = ['#6366f1','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#ec4899']
 const AVATAR_COLORS = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6']
@@ -28,6 +29,7 @@ const KPI: React.FC<{ icon: React.ReactNode; iconBg: string; iconColor: string; 
   )
 
 const ReportsView: React.FC = () => {
+  const notify = useNotify()
   const [overview, setOverview]     = useState<any>(null)
   const [monthly, setMonthly]       = useState<any[]>([])
   const [species, setSpecies]       = useState<any[]>([])
@@ -35,10 +37,23 @@ const ReportsView: React.FC = () => {
   const [chart, setChart]           = useState<'appointments' | 'revenue'>('appointments')
 
   useEffect(() => {
-    statsService.getStats().then(setOverview).catch(() => {})
-    statsService.getMonthly().then(setMonthly).catch(() => {})
-    statsService.getSpecies().then(setSpecies).catch(() => {})
-    statsService.getTopOwners().then(setTopOwners).catch(() => {})
+    const fetch = async () => {
+      try {
+        const [o, m, s, t] = await Promise.all([
+          statsService.getStats(),
+          statsService.getMonthly(),
+          statsService.getSpecies(),
+          statsService.getTopOwners()
+        ])
+        setOverview(o)
+        setMonthly(m)
+        setSpecies(s)
+        setTopOwners(t)
+      } catch {
+        notify.error('Error al cargar las métricas del sistema')
+      }
+    }
+    fetch()
   }, [])
 
   return (

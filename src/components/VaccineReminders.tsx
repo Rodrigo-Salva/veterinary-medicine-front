@@ -2,15 +2,19 @@ import React, { useEffect, useState } from 'react'
 import { vaccineService } from '../services/api'
 import { VaccineReminder } from '../types'
 import { Syringe, Calendar, Loader2 } from 'lucide-react'
+import { useNotify } from '../context/NotificationContext'
 
 const VaccineReminders: React.FC = () => {
+  const notify = useNotify()
   const [reminders, setReminders] = useState<VaccineReminder[]>([])
   const [loading, setLoading]     = useState(true)
 
   useEffect(() => {
     vaccineService.getUpcoming(30)
       .then(setReminders)
-      .catch(() => {})
+      .catch(() => {
+        notify.error('Error al cargar recordatorios de vacunas')
+      })
       .finally(() => setLoading(false))
   }, [])
 
