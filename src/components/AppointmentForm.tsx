@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { appointmentService, petService, ownerService } from '../services/api';
 import { AppointmentCreate, Pet, Owner } from '../types';
+import { useNotify } from '../context/NotificationContext';
 
 interface AppointmentFormProps {
   onSuccess: () => void;
@@ -8,6 +9,7 @@ interface AppointmentFormProps {
 }
 
 const AppointmentForm: React.FC<AppointmentFormProps> = ({ onSuccess, onCancel }) => {
+  const notify = useNotify();
   const [formData, setFormData] = useState<AppointmentCreate>({
     pet_id: '',
     owner_id: '',
@@ -29,7 +31,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({ onSuccess, onCancel }
         setOwners(ownersData);
         setPets(petsData);
       } catch (error) {
-        console.error('Error fetching data for appointments:', error);
+        notify.error('Error al cargar datos para la cita');
       }
     };
     fetchData();
@@ -38,7 +40,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({ onSuccess, onCancel }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.pet_id || !formData.owner_id) {
-      alert('Please select both a pet and an owner');
+      notify.warning('Por favor selecciona una mascota y un dueño');
       return;
     }
     setLoading(true);
@@ -47,10 +49,10 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({ onSuccess, onCancel }
         ...formData,
         date: new Date(formData.date).toISOString(),
       });
+      notify.success('Cita programada con éxito');
       onSuccess();
     } catch (error) {
-      console.error('Error scheduling appointment:', error);
-      alert('Error scheduling appointment. Please check the console.');
+      notify.error('Error al programar la cita');
     } finally {
       setLoading(false);
     }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, Plus, X, Clock, DollarSign, Calendar, Video } from 'lucide-react'
 import { appointmentService, petService, ownerService } from '../services/api'
 import ConfirmDialog from './ConfirmDialog'
+import { useNotify } from '../context/NotificationContext'
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
   Pending:  { bg: '#fff7ed', text: '#c2410c', dot: '#f97316' },
@@ -21,6 +22,7 @@ interface Appointment {
 }
 
 const CalendarView: React.FC = () => {
+  const notify = useNotify()
   const today = new Date()
   const [year, setYear]           = useState(today.getFullYear())
   const [month, setMonth]         = useState(today.getMonth())
@@ -38,7 +40,10 @@ const CalendarView: React.FC = () => {
       const start = new Date(year, month, 1).toISOString()
       const end   = new Date(year, month + 1, 0, 23, 59, 59).toISOString()
       setAppointments(await appointmentService.getByRange(start, end))
-    } catch { setAppointments([]) }
+    } catch { 
+      notify.error('Error al cargar las citas del mes')
+      setAppointments([]) 
+    }
   }
 
   useEffect(() => { load() }, [year, month])
@@ -72,16 +77,31 @@ const CalendarView: React.FC = () => {
         date: `${form.date}T${form.time}:00`,
         reason: form.reason, cost: parseFloat(form.cost) || 0,
       })
+      notify.success('Cita programada correctamente')
       setShowModal(false); load()
-    } catch(err) { console.error(err) }
+    } catch(err) { 
+      notify.error('Error al programar la cita')
+    }
     finally { setSaving(false) }
   }
 
   const handleStatus = async (id: string, status: string) => {
-    try { await appointmentService.updateStatus(id, status); load() } catch {}
+    try { 
+      await appointmentService.updateStatus(id, status)
+      notify.success(`Estado de cita: ${STATUS_LABEL[status]}`)
+      load() 
+    } catch {
+      notify.error('Error al actualizar el estado')
+    }
   }
   const handleDelete = async (id: string) => {
-    try { await appointmentService.delete(id); load() } catch {}
+    try { 
+      await appointmentService.delete(id)
+      notify.success('Cita eliminada')
+      load() 
+    } catch {
+      notify.error('Error al eliminar la cita')
+    }
   }
 
   const selAppts = selectedDay ? dayAppts(selectedDay) : []
