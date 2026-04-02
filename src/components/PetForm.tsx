@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { petService, ownerService } from '../services/api';
 import { PetCreate, Owner } from '../types';
+import { useNotify } from '../context/NotificationContext';
 
 interface PetFormProps {
   onSuccess: () => void;
@@ -8,6 +9,7 @@ interface PetFormProps {
 }
 
 const PetForm: React.FC<PetFormProps> = ({ onSuccess, onCancel }) => {
+  const notify = useNotify();
   const [formData, setFormData] = useState<PetCreate>({
     name: '',
     species: '',
@@ -33,16 +35,17 @@ const PetForm: React.FC<PetFormProps> = ({ onSuccess, onCancel }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.owner_id) {
-      alert('Please select an owner');
+      notify.warning('Por favor seleccione un dueño');
       return;
     }
     setLoading(true);
     try {
       await petService.create(formData);
+      notify.success('¡Mascota registrada con éxito!');
       onSuccess();
     } catch (error) {
       console.error('Error creating pet:', error);
-      alert('Error creating pet. Please check the console.');
+      notify.error('Error al registrar mascota. Intente de nuevo.');
     } finally {
       setLoading(false);
     }

@@ -4,6 +4,7 @@ import { Pet, PetUpdate, Owner } from '../types'
 import Modal from './Modal'
 import { Loader2, Dog, Cat, Bird, Heart, AlertCircle, Edit2, PowerOff, Users } from 'lucide-react'
 import ConfirmDialog from './ConfirmDialog'
+import { useNotify } from '../context/NotificationContext'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -30,6 +31,7 @@ interface EditFormProps {
 }
 
 const EditPetForm: React.FC<EditFormProps> = ({ pet, onSuccess, onCancel }) => {
+  const notify = useNotify()
   const [form, setForm] = useState<PetUpdate>({
     name: pet.name,
     species: pet.species,
@@ -43,10 +45,10 @@ const EditPetForm: React.FC<EditFormProps> = ({ pet, onSuccess, onCancel }) => {
     setLoading(true)
     try {
       const updated = await petService.update(pet.id, form)
+      notify.success('Mascota actualizada correctamente')
       onSuccess(updated)
     } catch (err) {
-      console.error('Error updating pet:', err)
-      alert('Error al actualizar la mascota.')
+      notify.error('Error al actualizar la mascota')
     } finally {
       setLoading(false)
     }
@@ -96,6 +98,7 @@ interface PetListProps {
 }
 
 const PetList: React.FC<PetListProps> = ({ searchQuery = '', onSelectPet }) => {
+  const notify = useNotify()
   const [pets, setPets] = useState<Pet[]>([])
   const [owners, setOwners] = useState<Owner[]>([])
   const [loading, setLoading] = useState(true)
@@ -108,7 +111,7 @@ const PetList: React.FC<PetListProps> = ({ searchQuery = '', onSelectPet }) => {
       setPets(p)
       setOwners(o)
     } catch (e) {
-      console.error('Error loading pets:', e)
+      notify.error('Error al cargar la lista de pacientes')
     } finally {
       setLoading(false)
     }
@@ -124,9 +127,10 @@ const PetList: React.FC<PetListProps> = ({ searchQuery = '', onSelectPet }) => {
   const handleDeactivate = async (pet: Pet) => {
     try {
       const updated = await petService.deactivate(pet.id)
+      notify.success(`${pet.name} desactivado correctamente`)
       setPets(prev => prev.map(p => p.id === updated.id ? updated : p))
     } catch (e) {
-      console.error('Error deactivating pet:', e)
+      notify.error('Error al desactivar la mascota')
     }
   }
 
