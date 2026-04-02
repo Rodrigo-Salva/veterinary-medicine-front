@@ -15,8 +15,10 @@ import { Product } from '../types'
 import Modal from './Modal'
 import ProductForm from './ProductForm'
 import ConfirmDialog from './ConfirmDialog'
+import { useNotify } from '../context/NotificationContext'
 
 const InventoryView: React.FC = () => {
+  const notify = useNotify();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,7 +31,7 @@ const InventoryView: React.FC = () => {
       const data = await inventoryService.getAll();
       setProducts(data);
     } catch (error) {
-      console.error('Error fetching inventory:', error);
+      notify.error('Error al cargar el inventario');
     } finally {
       setLoading(false);
     }
@@ -40,6 +42,7 @@ const InventoryView: React.FC = () => {
   }, []);
 
   const handleCreateSuccess = () => {
+    notify.success(selectedProduct ? 'Producto actualizado' : 'Producto creado con éxito');
     setIsModalOpen(false);
     setSelectedProduct(undefined);
     fetchProducts();
@@ -48,9 +51,10 @@ const InventoryView: React.FC = () => {
   const handleDelete = async (id: string) => {
     try {
       await inventoryService.delete(id);
+      notify.success('Producto eliminado del inventario');
       fetchProducts();
     } catch (error) {
-      console.error('Error deleting product:', error);
+      notify.error('Error al eliminar el producto');
     }
   };
 

@@ -4,6 +4,7 @@ import api, { roleService } from '../services/api'
 import type { Role } from '../types'
 import Modal from './Modal'
 import ConfirmDialog from './ConfirmDialog'
+import { useNotify } from '../context/NotificationContext'
 
 interface UserData {
   id: string
@@ -27,6 +28,7 @@ const ROLE_LABELS: Record<string, string> = {
 }
 
 const UserManagement: React.FC = () => {
+  const notify = useNotify()
   const [users, setUsers]         = useState<UserData[]>([])
   const [roles, setRoles]         = useState<Role[]>([])
   const [loading, setLoading]     = useState(true)
@@ -49,7 +51,9 @@ const UserManagement: React.FC = () => {
       if (!form.role_id && rolesRes.length > 0) {
         setForm(f => ({ ...f, role_id: rolesRes[0].id }))
       }
-    } catch { console.error('Error loading users') }
+    } catch { 
+      notify.error('Error al cargar usuarios')
+    }
     finally { setLoading(false) }
   }
 
@@ -79,11 +83,15 @@ const UserManagement: React.FC = () => {
         const payload: any = { username: form.username, email: form.email, role_id: form.role_id }
         if (form.password) payload.password = form.password
         await api.put(`/users/${editUser.id}`, payload)
+        notify.success('Usuario actualizado correctamente')
       } else {
         await api.post('/users/', form)
+        notify.success('Usuario creado correctamente')
       }
       setModalOpen(false); load()
-    } catch { alert('Error al guardar usuario') }
+    } catch { 
+      notify.error('Error al guardar el usuario')
+    }
     finally { setSaving(false) }
   }
 
@@ -93,8 +101,11 @@ const UserManagement: React.FC = () => {
     if (!confirmToggle) return
     try {
       await api.patch(`/users/${confirmToggle.id}/toggle`)
+      notify.success(`Usuario ${confirmToggle.is_active ? 'desactivado' : 'activado'} correctamente`)
       load()
-    } catch { alert('No se pudo cambiar el estado') }
+    } catch { 
+      notify.error('No se pudo cambiar el estado del usuario')
+    }
     finally { setConfirmToggle(null) }
   }
 

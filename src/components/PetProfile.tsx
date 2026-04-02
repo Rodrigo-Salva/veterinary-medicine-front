@@ -7,6 +7,7 @@ import { petService, ownerService, medicalService, attachmentService } from '../
 import type { Pet, Owner, MedicalRecord, WeightRecord, Attachment } from '../types'
 import Modal from './Modal'
 import ConsentModal from './ConsentModal'
+import { useNotify } from '../context/NotificationContext'
 
 const API_URL = import.meta.env.VITE_API_URL as string
 
@@ -69,6 +70,7 @@ interface PetProfileProps {
 }
 
 const PetProfile: React.FC<PetProfileProps> = ({ petId, onBack, onUpdated }) => {
+  const notify = useNotify()
   const [pet, setPet] = useState<Pet | null>(null)
   const [owner, setOwner] = useState<Owner | null>(null)
   const [records, setRecords] = useState<MedicalRecord[]>([])
@@ -101,7 +103,9 @@ const PetProfile: React.FC<PetProfileProps> = ({ petId, onBack, onUpdated }) => 
       setOwner(o)
       setRecords(m)
       setAttachments(a)
-    } catch (e) { console.error(e) }
+    } catch (e) {
+      notify.error('Error al cargar la ficha del paciente')
+    }
     finally { setLoading(false) }
   }
 
@@ -113,8 +117,11 @@ const PetProfile: React.FC<PetProfileProps> = ({ petId, onBack, onUpdated }) => 
     try {
       const updated = await petService.uploadPhoto(pet.id, file)
       setPet(updated)
+      notify.success('Foto actualizada correctamente')
       onUpdated?.()
-    } catch { alert('Error al subir la foto') }
+    } catch {
+      notify.error('Error al subir la foto')
+    }
   }
 
   const handleSave = async () => {
@@ -124,8 +131,11 @@ const PetProfile: React.FC<PetProfileProps> = ({ petId, onBack, onUpdated }) => 
       const updated = await petService.update(pet.id, editForm)
       setPet(updated)
       setEditing(false)
+      notify.success('Ficha actualizada con éxito')
       onUpdated?.()
-    } catch { alert('Error al guardar') }
+    } catch {
+      notify.error('Error al guardar los cambios')
+    }
     finally { setSaving(false) }
   }
 
@@ -138,10 +148,13 @@ const PetProfile: React.FC<PetProfileProps> = ({ petId, onBack, onUpdated }) => 
         recorded_date: weightForm.recorded_date,
         notes: weightForm.notes || undefined,
       })
+      notify.success('Peso registrado correctamente')
       setWeightModal(false)
       setWeightForm({ weight: '', recorded_date: new Date().toISOString().split('T')[0], notes: '' })
       load()
-    } catch { alert('Error al registrar peso') }
+    } catch {
+      notify.error('Error al registrar el peso')
+    }
   }
 
   const handleSaveSignature = async (dataUrl: string, type: string) => {
@@ -150,15 +163,23 @@ const PetProfile: React.FC<PetProfileProps> = ({ petId, onBack, onUpdated }) => 
       const blob = await (await fetch(dataUrl)).blob()
       const file = new File([blob], `firma_${type.toLowerCase().replace(/ /g, '_')}.png`, { type: 'image/png' })
       await attachmentService.upload(pet.id, file, `Firma de consentimiento: ${type}`, 'Consentment')
+      notify.success('Consentimiento firmado y guardado')
       setConsentModal(false)
       load()
-    } catch (e) { alert('Error al guardar la firma') }
+    } catch (e) {
+      notify.error('Error al guardar la firma')
+    }
   }
 
   const handleDeleteAttachment = async (id: string) => {
     if (!window.confirm('¿Eliminar este consentimiento?')) return
-    await attachmentService.delete(id)
-    load()
+    try {
+      await attachmentService.delete(id)
+      notify.success('Consentimiento eliminado')
+      load()
+    } catch {
+      notify.error('Error al eliminar el documento')
+    }
   }
 
   if (loading || !pet) {

@@ -4,6 +4,7 @@ import { Activity, Thermometer, Heart, PlusCircle, Loader2, LogOut, Plus, X, Edi
 import Modal from './Modal'
 import ConfirmDialog from './ConfirmDialog'
 import HeaderActions from './HeaderActions'
+import { useNotify } from '../context/NotificationContext'
 
 interface Cage { 
   id: string; 
@@ -18,6 +19,7 @@ interface Hospitalization { id: string; pet_id: string; cage_id: string; reason:
 const lbl: React.CSSProperties = { fontSize: '13px', fontWeight: 600, color: '#64748b', marginBottom: '8px', display: 'block' }
 
 const HospitalView: React.FC = () => {
+  const notify = useNotify()
   const [cages, setCages]     = useState<Cage[]>([])
   const [pets, setPets]       = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -49,7 +51,9 @@ const HospitalView: React.FC = () => {
     try {
       const [c, p] = await Promise.all([hospitalService.getCages(), petService.getAll()])
       setCages(c); setPets(p)
-    } catch (e) { console.error('Error loading hospital:', e) }
+    } catch (e) { 
+      notify.error('Error al cargar datos del hospital')
+    }
     finally { setLoading(false) }
   }
 
@@ -64,11 +68,15 @@ const HospitalView: React.FC = () => {
     try {
       if (editingCage) {
         await hospitalService.updateCage(editingCage.id, cageName)
+        notify.success('Jaula actualizada')
       } else {
         await hospitalService.createCage(cageName)
+        notify.success('Jaula creada con éxito')
       }
       setShowCageModal(false); setEditingCage(null); setCageName(''); load()
-    } catch (err) { alert('Error al guardar jaula: ' + err) }
+    } catch (err) { 
+      notify.error('Error al guardar la jaula')
+    }
     finally { setCageSaving(false) }
   }
 
@@ -82,8 +90,11 @@ const HospitalView: React.FC = () => {
         setConfirm(c => ({ ...c, open: false }))
         try {
           await hospitalService.deleteCage(cage.id)
+          notify.success('Jaula eliminada')
           load()
-        } catch (err) { alert('No se pudo eliminar: ' + err) }
+        } catch (err) { 
+          notify.error('No se pudo eliminar la jaula')
+        }
       }
     })
   }
@@ -95,8 +106,11 @@ const HospitalView: React.FC = () => {
     setCheckInSaving(true)
     try {
       await hospitalService.checkIn({ pet_id: checkInForm.pet_id, cage_id: checkInCage.id, reason: checkInForm.reason })
+      notify.success('Paciente ingresado a hospitalización')
       setCheckInCage(null); setCheckInForm({ pet_id: '', reason: '' }); load()
-    } catch (err) { alert('Error en el ingreso: ' + err) }
+    } catch (err) { 
+      notify.error('Error al procesar el ingreso')
+    }
     finally { setCheckInSaving(false) }
   }
 
@@ -114,7 +128,10 @@ const HospitalView: React.FC = () => {
   // Discharge
   const askDischarge = (cage: Cage) => {
     const hospId = cage.current_hospitalization_id
-    if (!hospId) { alert('No se encontró el ID de hospitalización.'); return }
+    if (!hospId) { 
+      notify.warning('No se encontró el registro de hospitalización')
+      return 
+    }
 
     setConfirm({
       open: true,
@@ -125,8 +142,11 @@ const HospitalView: React.FC = () => {
         setConfirm(c => ({ ...c, open: false }))
         try {
           await hospitalService.discharge(hospId)
+          notify.success('Alta médica procesada correctamente')
           setManageHosp(null); load()
-        } catch (err) { alert('Error al procesar el alta.') }
+        } catch (err) { 
+          notify.error('Error al procesar el alta médica')
+        }
       },
     })
   }
@@ -134,7 +154,10 @@ const HospitalView: React.FC = () => {
   // Record vitals
   const handleVitals = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!manageHosp?.id) { alert('ID de hospitalización no disponible.'); return }
+    if (!manageHosp?.id) { 
+      notify.error('Error de referencia: ID no disponible')
+      return 
+    }
     setVitalSaving(true)
     try {
       await hospitalService.recordVitals({
@@ -144,10 +167,12 @@ const HospitalView: React.FC = () => {
         respiratory_rate: parseInt(vitalForm.respiratory_rate),
         notes: vitalForm.notes,
       })
+      notify.success('Signos vitales registrados con éxito')
       setVitalForm({ temperature: '', heart_rate: '', respiratory_rate: '', notes: '' })
       setShowVitalForm(false)
-      alert('Signos vitales registrados')
-    } catch (err) { console.error(err) }
+    } catch (err) { 
+      notify.error('Error al guardar signos vitales')
+    }
     finally { setVitalSaving(false) }
   }
 

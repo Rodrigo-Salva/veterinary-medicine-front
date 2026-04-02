@@ -5,6 +5,7 @@ import api from '../services/api'
 import Modal from './Modal'
 import ConfirmDialog from './ConfirmDialog'
 import type { Owner, OwnerCreate } from '../types'
+import { useNotify } from '../context/NotificationContext'
 
 // ── Tipos locales ─────────────────────────────────────────────────────────────
 interface OwnerWithPets extends Owner {
@@ -22,6 +23,7 @@ const emptyForm: FormState = { first_name: '', last_name: '', email: '', phone: 
 
 // ── Componente ────────────────────────────────────────────────────────────────
 const OwnersView: React.FC = () => {
+  const notify = useNotify()
   const [owners, setOwners]           = useState<OwnerWithPets[]>([])
   const [loading, setLoading]         = useState(true)
   const [search, setSearch]           = useState('')
@@ -46,7 +48,7 @@ const OwnersView: React.FC = () => {
       })
       setOwners(ownersData.map(o => ({ ...o, petCount: countMap[o.id] ?? 0 })))
     } catch {
-      // silencioso
+      notify.error('Error al cargar la lista de propietarios')
     } finally {
       setLoading(false)
     }
@@ -94,7 +96,7 @@ const OwnersView: React.FC = () => {
   const handleSave = async () => {
     const { first_name, last_name, email, phone } = form
     if (!first_name.trim() || !last_name.trim() || !email.trim()) {
-      setFormError('Nombre, apellido y correo son obligatorios.')
+      notify.warning('Nombre, apellido y correo son obligatorios.')
       return
     }
     setSaving(true)
@@ -102,13 +104,17 @@ const OwnersView: React.FC = () => {
     try {
       if (editTarget) {
         await api.put(`/owners/${editTarget.id}`, { first_name, last_name, email, phone })
+        notify.success('Propietario actualizado correctamente')
       } else {
         await ownerService.create({ first_name, last_name, email, phone } as OwnerCreate)
+        notify.success('Propietario registrado con éxito')
       }
       setShowModal(false)
       await load()
     } catch (err: any) {
-      setFormError(err?.response?.data?.detail ?? 'Error al guardar. Intente de nuevo.')
+      const msg = err?.response?.data?.detail ?? 'Error al guardar el propietario'
+      notify.error(msg)
+      setFormError(msg)
     } finally {
       setSaving(false)
     }
@@ -119,9 +125,11 @@ const OwnersView: React.FC = () => {
     if (!deleteTarget) return
     try {
       await api.delete(`/owners/${deleteTarget.id}`)
+      notify.success('Propietario eliminado correctamente')
       setDeleteTarget(null)
       await load()
     } catch {
+      notify.error('No se pudo eliminar el propietario')
       setDeleteTarget(null)
     }
   }
